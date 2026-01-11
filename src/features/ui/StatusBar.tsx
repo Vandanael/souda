@@ -6,13 +6,15 @@ export function StatusBar() {
   const maxWeight = useGameStore(state => state.inventory.maxWeight);
   const getPlayerAtk = useGameStore(state => state.getPlayerAtk);
   const getPlayerDef = useGameStore(state => state.getPlayerDef);
+  const getPlayerMaxHp = useGameStore(state => state.getPlayerMaxHp);
   
   const weight = getCurrentWeight();
   const atk = getPlayerAtk();
   const def = getPlayerDef();
+  const maxHp = getPlayerMaxHp();
   
   // Calculs de pourcentages
-  const hpPercent = (player.hp / player.maxHp) * 100;
+  const hpPercent = (player.hp / maxHp) * 100;
   const weightPercent = (weight / maxWeight) * 100;
   
   // États critiques
@@ -31,7 +33,7 @@ export function StatusBar() {
         </span>
         <div className="flex flex-col">
           <span className={`font-bold tabular-nums ${isHpLow ? 'text-red-400 animate-pulse' : isHpMedium ? 'text-yellow-400' : 'text-emerald-400'}`}>
-            {player.hp}/{player.maxHp}
+            {player.hp}/{maxHp}
           </span>
           <div className="w-20 h-1.5 bg-zinc-700 rounded-full overflow-hidden">
             <div 
@@ -90,6 +92,21 @@ export function StatusBar() {
       <div className="flex items-center gap-2">
         <span className="text-sm text-zinc-400">Or</span>
         <span className="font-bold text-amber-400 tabular-nums">{player.gold}</span>
+      </div>
+      
+      {/* Séparateur */}
+      <div className="h-8 w-px bg-zinc-700" />
+      
+      {/* Karma */}
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-zinc-400">Karma</span>
+        <span className={`font-bold tabular-nums ${
+          player.karma > 20 ? 'text-emerald-400' : 
+          player.karma < -20 ? 'text-red-400' : 
+          'text-zinc-400'
+        }`}>
+          {player.karma > 0 ? '+' : ''}{player.karma}
+        </span>
       </div>
     </div>
   );

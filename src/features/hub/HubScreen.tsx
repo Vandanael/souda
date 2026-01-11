@@ -2,6 +2,8 @@ import { useState, useMemo } from 'react';
 import { useGameStore } from '../../store/gameStore';
 import type { LootCard, LootType } from '../../types';
 import { getRandomRumors } from '../../data/rumors';
+import { QUESTS, type Quest } from '../../data/quests';
+import { sounds } from '../../utils/sounds';
 
 const TYPE_LABELS: Record<LootType, string> = {
   weapon: 'Arme',
@@ -19,7 +21,7 @@ const TYPE_COLORS: Record<LootType, string> = {
   treasure: 'text-amber-400',
 };
 
-type HubTab = 'rest' | 'equipment' | 'chest' | 'rumors' | 'stats';
+type HubTab = 'rest' | 'shop' | 'quests' | 'equipment' | 'chest' | 'rumors' | 'stats';
 
 export function HubScreen() {
   const screen = useGameStore(state => state.screen);
@@ -29,13 +31,17 @@ export function HubScreen() {
   const stats = useGameStore(state => state.stats);
   const restAtHub = useGameStore(state => state.restAtHub);
   const equipItem = useGameStore(state => state.equipItem);
+  const sellItem = useGameStore(state => state.sellItem);
   const storeInChest = useGameStore(state => state.storeInChest);
   const retrieveFromChest = useGameStore(state => state.retrieveFromChest);
+  const activeQuests = useGameStore(state => state.activeQuests);
+  const completedQuests = useGameStore(state => state.completedQuests);
+  const acceptQuest = useGameStore(state => state.acceptQuest);
+  const completeQuest = useGameStore(state => state.completeQuest);
   
   const [activeTab, setActiveTab] = useState<HubTab>('rest');
   const [message, setMessage] = useState<string | null>(null);
   
-  // Mémoriser les rumeurs pour cette session au hub
   const rumors = useMemo(() => getRandomRumors(4), []);
   
   if (screen !== 'hub') return null;
@@ -43,18 +49,33 @@ export function HubScreen() {
   const handleRest = (option: 'basic' | 'luxury') => {
     const success = restAtHub(option);
     if (success) {
+      sounds.purchase();
       setMessage(option === 'basic' 
         ? 'Tu te sens mieux après un bon repas.' 
         : 'Une nuit parfaite. Tu es comme neuf !');
     } else {
+      sounds.error();
       setMessage('Pas assez de pièces...');
     }
     setTimeout(() => setMessage(null), 3000);
   };
   
   const handleEquip = (item: LootCard) => {
+    sounds.lootTake();
     equipItem(item);
     setMessage(`${item.name} équipé !`);
+    setTimeout(() => setMessage(null), 2000);
+  };
+  
+  const handleSell = (index: number) => {
+    const result = sellItem(index);
+    if (result.success) {
+      sounds.purchase();
+      setMessage(result.message);
+    } else {
+      sounds.error();
+      setMessage(result.message);
+    }
     setTimeout(() => setMessage(null), 2000);
   };
 
@@ -102,6 +123,8 @@ export function HubScreen() {
         <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
           {[
             { id: 'rest' as const, label: 'Repos' },
+            { id: 'shop' as const, label: 'Marchand' },
+            { id: 'quests' as const, label: 'Quêtes' },
             { id: 'equipment' as const, label: 'Équipement' },
             { id: 'chest' as const, label: 'Coffre' },
             { id: 'rumors' as const, label: 'Annonces' },
@@ -111,7 +134,7 @@ export function HubScreen() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`
-                flex-1 min-w-24 p-3 rounded-lg transition-all whitespace-nowrap
+                flex-1 min-w-20 p-3 rounded-lg transition-all whitespace-nowrap text-sm
                 ${activeTab === tab.id 
                   ? 'bg-amber-600 text-white scale-105' 
                   : 'bg-zinc-700 hover:bg-zinc-600'}
@@ -126,6 +149,22 @@ export function HubScreen() {
         <div className="bg-zinc-800/80 rounded-xl p-4 sm:p-6 min-h-[300px] border border-zinc-700">
           {activeTab === 'rest' && (
             <RestTab player={player} onRest={handleRest} />
+          )}
+          {activeTab === 'shop' && (
+            <ShopTab 
+              inventory={inventory}
+              onSell={handleSell}
+            />
+          )}
+          {activeTab === 'quests' && (
+            <QuestsTab 
+              stats={stats}
+              activeQuests={activeQuests}
+              completedQuests={completedQuests}
+              onAccept={acceptQuest}
+              onComplete={completeQuest}
+              setMessage={setMessage}
+            />
           )}
           {activeTab === 'equipment' && (
             <EquipmentTab 
@@ -217,6 +256,73 @@ function RestTab({ player, onRest }: {
           </div>
         </button>
       ))}
+    </div>
+  );
+}
+
+function ShopTab({ inventory, onSell }: {
+  inventory: { bag: LootCard[] };
+  onSell: (index: number) => void;
+}) {
+  const sellableItems = inventory.bag
+    .map((item, index) => ({ item, index }))
+    .filter(({ item }) => item.value && item.value > 0);
+  
+  const totalValue = sellableItems.reduce((sum, { item }) => {
+    return sum + Math.floor((item.value || 0) * 0.6);
+  }, 0);
+  
+  return (
+    <div>
+      <h3 className="text-xl font-bold mb-2">Marchand</h3>
+      <p className="text-sm text-zinc-400 mb-4">
+        "Je rachète tout à 60% du prix. C'est une affaire honnête."
+      </p>
+      
+      {sellableItems.length === 0 ? (
+        <div className="text-center py-8 text-zinc-500">
+          <p className="text-lg mb-2">Rien à vendre</p>
+          <p className="text-sm">Trouve des trésors en explorant !</p>
+        </div>
+      ) : (
+        <>
+          <div className="mb-4 p-3 bg-amber-900/30 rounded-lg border border-amber-700/50">
+            <p className="text-sm text-amber-300">
+              Valeur totale vendable : <span className="font-bold">{totalValue} pièces</span>
+            </p>
+          </div>
+          
+          <div className="space-y-2 max-h-64 overflow-y-auto">
+            {sellableItems.map(({ item, index }) => {
+              const sellPrice = Math.floor((item.value || 0) * 0.6);
+              return (
+                <div 
+                  key={`sell-${index}`}
+                  className="flex items-center gap-3 p-3 bg-zinc-700/30 rounded-lg"
+                >
+                  <span className={`text-xs font-medium ${TYPE_COLORS[item.type]}`}>
+                    {TYPE_LABELS[item.type]}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{item.name}</p>
+                    <p className="text-xs text-zinc-500">{item.description}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-amber-400 font-bold">{sellPrice}</p>
+                    <p className="text-xs text-zinc-500">pièces</p>
+                  </div>
+                  <button
+                    onClick={() => onSell(index)}
+                    className="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 rounded-lg text-sm font-bold transition-colors"
+                  >
+                    Vendre
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -370,6 +476,136 @@ function ChestTab({ inventory, onStore, onRetrieve }: {
   );
 }
 
+function QuestsTab({ 
+  stats,
+  activeQuests,
+  completedQuests,
+  onAccept,
+  onComplete,
+  setMessage,
+}: {
+  stats: { tilesExplored: number; biomesExplored: Record<string, number>; enemiesKilledByType: Record<string, number> };
+  activeQuests: string[];
+  completedQuests: string[];
+  onAccept: (id: string) => void;
+  onComplete: (id: string, reward: { gold: number; karma?: number }) => void;
+  setMessage: (msg: string) => void;
+}) {
+  const checkQuestProgress = (quest: Quest): { current: number; target: number; complete: boolean } => {
+    let current = 0;
+    const target = quest.target.count;
+    
+    if (quest.type === 'explore') {
+      if (quest.target.biome) {
+        current = stats.biomesExplored[quest.target.biome] || 0;
+      } else {
+        current = stats.tilesExplored;
+      }
+    } else if (quest.type === 'kill' && quest.target.enemyId) {
+      current = stats.enemiesKilledByType[quest.target.enemyId] || 0;
+    }
+    
+    return { current: Math.min(current, target), target, complete: current >= target };
+  };
+  
+  const handleComplete = (quest: Quest) => {
+    sounds.purchase();
+    onComplete(quest.id, quest.reward);
+    setMessage(`Quête terminée ! +${quest.reward.gold} or`);
+    setTimeout(() => setMessage(''), 2000);
+  };
+  
+  const availableQuests = QUESTS.filter(q => !activeQuests.includes(q.id) && !completedQuests.includes(q.id));
+  const myActiveQuests = QUESTS.filter(q => activeQuests.includes(q.id));
+  
+  return (
+    <div>
+      <h3 className="text-xl font-bold mb-4">Tableau des Quêtes</h3>
+      
+      {/* Quêtes actives */}
+      {myActiveQuests.length > 0 && (
+        <div className="mb-6">
+          <h4 className="font-bold text-amber-400 mb-3">Quêtes en cours</h4>
+          <div className="space-y-3">
+            {myActiveQuests.map(quest => {
+              const progress = checkQuestProgress(quest);
+              return (
+                <div key={quest.id} className="p-4 bg-amber-900/30 rounded-xl border border-amber-700/50">
+                  <div className="flex justify-between items-start mb-2">
+                    <h5 className="font-bold">{quest.title}</h5>
+                    <span className="text-amber-400 font-bold">{quest.reward.gold} or</span>
+                  </div>
+                  <p className="text-sm text-zinc-400 mb-2">{quest.description}</p>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 h-2 bg-zinc-700 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-amber-500 transition-all"
+                        style={{ width: `${(progress.current / progress.target) * 100}%` }}
+                      />
+                    </div>
+                    <span className="text-sm font-bold">{progress.current}/{progress.target}</span>
+                    {progress.complete && (
+                      <button
+                        onClick={() => handleComplete(quest)}
+                        className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 rounded text-sm font-bold"
+                      >
+                        Terminer
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+      
+      {/* Quêtes disponibles */}
+      <div>
+        <h4 className="font-bold text-zinc-400 mb-3">Quêtes disponibles</h4>
+        {availableQuests.length === 0 ? (
+          <p className="text-zinc-500 italic">Aucune nouvelle quête pour le moment.</p>
+        ) : (
+          <div className="space-y-3">
+            {availableQuests.slice(0, 3).map(quest => (
+              <div key={quest.id} className="p-4 bg-zinc-700/30 rounded-xl">
+                <div className="flex justify-between items-start mb-2">
+                  <div>
+                    <h5 className="font-bold">{quest.title}</h5>
+                    <p className="text-xs text-zinc-500">{quest.giver}</p>
+                  </div>
+                  <span className="text-amber-400 font-bold">{quest.reward.gold} or</span>
+                </div>
+                <p className="text-sm text-zinc-400 mb-3">{quest.description}</p>
+                <button
+                  onClick={() => {
+                    sounds.click();
+                    onAccept(quest.id);
+                    setMessage(`Quête acceptée : ${quest.title}`);
+                    setTimeout(() => setMessage(''), 2000);
+                  }}
+                  className="px-4 py-2 bg-amber-600 hover:bg-amber-500 rounded-lg text-sm font-bold transition-colors"
+                >
+                  Accepter
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      
+      {/* Quêtes terminées */}
+      {completedQuests.length > 0 && (
+        <div className="mt-6 pt-4 border-t border-zinc-700">
+          <p className="text-sm text-zinc-500">
+            {completedQuests.length} quête{completedQuests.length > 1 ? 's' : ''} terminée{completedQuests.length > 1 ? 's' : ''}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function RumorsTab({ rumors }: {
   rumors: { id: string; author: string; date: string; content: string; hint?: string }[];
 }) {
@@ -406,31 +642,98 @@ function RumorsTab({ rumors }: {
 }
 
 function StatsTab({ stats }: {
-  stats: { tilesExplored: number; enemiesKilled: number; itemsCollected: number; deaths: number };
+  stats: { 
+    tilesExplored: number; 
+    enemiesKilled: number; 
+    itemsCollected: number; 
+    deaths: number;
+    biomesExplored: Record<string, number>;
+    enemiesKilledByType: Record<string, number>;
+  };
 }) {
+  const biomeNames: Record<string, string> = {
+    hub: 'Hub',
+    plain: 'Plaines',
+    forest: 'Forêts',
+    hills: 'Collines',
+    ruins: 'Ruines',
+    village: 'Villages',
+  };
+  
+  const enemyNames: Record<string, string> = {
+    wolf: 'Loups',
+    bandit: 'Bandits',
+    mercenary: 'Mercenaires',
+    wolf_pack_alpha: 'Alphas',
+    deserter: 'Déserteurs',
+    patrol_chief: 'Chefs',
+    scavenger: 'Charognards',
+    wild_boar: 'Sangliers',
+    marauder: 'Maraudeurs',
+    hunter: 'Chasseurs',
+    veteran: 'Vétérans',
+  };
+  
   return (
     <div>
       <h3 className="text-xl font-bold mb-4">Statistiques</h3>
       
-      <div className="grid grid-cols-2 gap-4">
+      {/* Stats principales */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         <div className="p-4 bg-zinc-700/30 rounded-xl text-center">
-          <p className="text-2xl font-bold">{stats.tilesExplored}</p>
-          <p className="text-sm text-zinc-400">Zones explorées</p>
+          <p className="text-2xl font-bold text-amber-400">{stats.tilesExplored}</p>
+          <p className="text-xs text-zinc-400">Zones explorées</p>
         </div>
         
         <div className="p-4 bg-zinc-700/30 rounded-xl text-center">
-          <p className="text-2xl font-bold">{stats.enemiesKilled}</p>
-          <p className="text-sm text-zinc-400">Ennemis vaincus</p>
+          <p className="text-2xl font-bold text-red-400">{stats.enemiesKilled}</p>
+          <p className="text-xs text-zinc-400">Ennemis vaincus</p>
         </div>
         
         <div className="p-4 bg-zinc-700/30 rounded-xl text-center">
-          <p className="text-2xl font-bold">{stats.itemsCollected}</p>
-          <p className="text-sm text-zinc-400">Objets collectés</p>
+          <p className="text-2xl font-bold text-emerald-400">{stats.itemsCollected}</p>
+          <p className="text-xs text-zinc-400">Objets collectés</p>
         </div>
         
         <div className="p-4 bg-zinc-700/30 rounded-xl text-center">
-          <p className="text-2xl font-bold">{stats.deaths}</p>
-          <p className="text-sm text-zinc-400">Morts</p>
+          <p className="text-2xl font-bold text-zinc-400">{stats.deaths}</p>
+          <p className="text-xs text-zinc-400">Morts</p>
+        </div>
+      </div>
+      
+      {/* Détails biomes */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="p-4 bg-zinc-700/30 rounded-xl">
+          <h4 className="font-bold text-sm text-zinc-400 mb-3">Biomes explorés</h4>
+          <div className="space-y-2">
+            {Object.entries(stats.biomesExplored)
+              .filter(([, count]) => count > 0)
+              .sort((a, b) => b[1] - a[1])
+              .map(([biome, count]) => (
+                <div key={biome} className="flex justify-between text-sm">
+                  <span>{biomeNames[biome] || biome}</span>
+                  <span className="text-amber-400 font-bold">{count}</span>
+                </div>
+              ))}
+          </div>
+        </div>
+        
+        <div className="p-4 bg-zinc-700/30 rounded-xl">
+          <h4 className="font-bold text-sm text-zinc-400 mb-3">Ennemis tués</h4>
+          <div className="space-y-2">
+            {Object.entries(stats.enemiesKilledByType).length === 0 ? (
+              <p className="text-zinc-500 italic text-sm">Aucun ennemi tué</p>
+            ) : (
+              Object.entries(stats.enemiesKilledByType)
+                .sort((a, b) => b[1] - a[1])
+                .map(([enemy, count]) => (
+                  <div key={enemy} className="flex justify-between text-sm">
+                    <span>{enemyNames[enemy] || enemy}</span>
+                    <span className="text-red-400 font-bold">{count}</span>
+                  </div>
+                ))
+            )}
+          </div>
         </div>
       </div>
     </div>

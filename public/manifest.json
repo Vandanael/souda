@@ -1,0 +1,17 @@
+{
+  "name": "SOUDA: Terra Incognita",
+  "short_name": "SOUDA",
+  "description": "Un idle dungeon crawler low fantasy",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#18181b",
+  "theme_color": "#f59e0b",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "./icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ]
+}

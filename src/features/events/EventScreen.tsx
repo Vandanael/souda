@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useGameStore } from '../../store/gameStore';
 import type { EventChoice } from '../../data/events';
+import { sounds } from '../../utils/sounds';
 
 export function EventScreen() {
   const currentEvent = useGameStore(state => state.currentEvent);
@@ -9,11 +10,22 @@ export function EventScreen() {
   const [result, setResult] = useState<{ message: string; success: boolean } | null>(null);
   const [isResolving, setIsResolving] = useState(false);
   
+  useEffect(() => {
+    if (currentEvent) sounds.eventStart();
+  }, [currentEvent]);
+  
   if (!currentEvent) return null;
   
   const handleChoice = (choice: EventChoice) => {
     setIsResolving(true);
     const res = resolveEventChoice(choice);
+    
+    if (res.success) {
+      sounds.eventSuccess();
+    } else {
+      sounds.eventFail();
+    }
+    
     setResult(res);
     
     setTimeout(() => {

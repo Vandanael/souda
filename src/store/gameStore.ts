@@ -34,6 +34,7 @@ const createInitialState = (): GameState => ({
     maxHp: 100,
     hunger: 4, // 4 jours de faim
     gold: 5,
+    karma: 0, // -100 à +100
   },
   
   inventory: {
@@ -66,11 +67,16 @@ const createInitialState = (): GameState => ({
   currentEvent: null,
   
   stats: {
-    tilesExplored: 1, // Hub déjà exploré
+    tilesExplored: 1,
     enemiesKilled: 0,
     itemsCollected: 0,
     deaths: 0,
+    biomesExplored: { hub: 1 },
+    enemiesKilledByType: {},
   },
+  
+  activeQuests: [],
+  completedQuests: [],
 });
 
 // Store Zustand avec persistence
@@ -142,7 +148,9 @@ export const useGameStore = create<GameStore>()(
         let enemy: Enemy | null = null;
         
         if (isFirstVisit && targetTile.type !== 'hub') {
-          loot = rollLoot(targetTile.type);
+          // Bonus de loot si skill Fouilleur équipé (+20%)
+          const hasScavenger = inventory.equipped.skills.some(s => s.id === 'skill_scavenger');
+          loot = rollLoot(targetTile.type, hasScavenger ? 0.2 : 0);
           enemy = spawnEnemy(targetTile.type);
         }
         
@@ -178,6 +186,12 @@ export const useGameStore = create<GameStore>()(
             tilesExplored: isFirstVisit 
               ? state.stats.tilesExplored + 1 
               : state.stats.tilesExplored,
+            biomesExplored: isFirstVisit
+              ? {
+                  ...state.stats.biomesExplored,
+                  [targetTile.type]: (state.stats.biomesExplored[targetTile.type] || 0) + 1,
+                }
+              : state.stats.biomesExplored,
           },
         }));
         
@@ -263,6 +277,77 @@ export const useGameStore = create<GameStore>()(
         }));
       },
 
+      sellItem: (index: number): { success: boolean; gold: number; message: string } => {
+        const state = get();
+        const item = state.inventory.bag[index];
+        
+        if (!item) return { success: false, gold: 0, message: 'Item introuvable' };
+        if (!item.value) return { success: false, gold: 0, message: 'Cet objet n\'a pas de valeur' };
+        
+        const sellPrice = Math.floor(item.value * 0.6); // 60% de la valeur
+        
+        set(s => ({
+          player: {
+            ...s.player,
+            gold: s.player.gold + sellPrice,
+          },
+          inventory: {
+            ...s.inventory,
+            bag: s.inventory.bag.filter((_, i) => i !== index),
+          },
+        }));
+        
+        return { 
+          success: true, 
+          gold: sellPrice,
+          message: `${item.name} vendu pour ${sellPrice} pièces !` 
+        };
+      },
+
+      useItem: (index: number): { success: boolean; message: string } => {
+        const state = get();
+        const item = state.inventory.bag[index];
+        
+        if (!item) return { success: false, message: 'Item introuvable' };
+        if (item.type !== 'consumable') return { success: false, message: 'Non consommable' };
+        
+        const { heal, hungerRestore } = item.stats;
+        const messages: string[] = [];
+        
+        // Appliquer les effets
+        set(s => {
+          let newHp = s.player.hp;
+          let newHunger = s.player.hunger;
+          
+          if (heal) {
+            newHp = Math.min(s.player.maxHp, newHp + heal);
+            messages.push(`+${heal} HP`);
+          }
+          
+          if (hungerRestore) {
+            newHunger = newHunger + hungerRestore;
+            messages.push(`+${hungerRestore}j faim`);
+          }
+          
+          return {
+            player: {
+              ...s.player,
+              hp: newHp,
+              hunger: newHunger,
+            },
+            inventory: {
+              ...s.inventory,
+              bag: s.inventory.bag.filter((_, i) => i !== index),
+            },
+          };
+        });
+        
+        return { 
+          success: true, 
+          message: `${item.name} : ${messages.join(', ')}` 
+        };
+      },
+
       // ========================================
       // PLAYER ACTIONS
       // ========================================
@@ -289,6 +374,17 @@ export const useGameStore = create<GameStore>()(
       getPlayerDef: (): number => {
         const { inventory } = get();
         return inventory.equipped.armor?.stats.def || 0;
+      },
+      
+      getPlayerMaxHp: (): number => {
+        const { inventory, player } = get();
+        const hasEndurant = inventory.equipped.skills.some(s => s.id === 'skill_tough');
+        return player.maxHp + (hasEndurant ? 20 : 0);
+      },
+      
+      hasSkill: (skillId: string): boolean => {
+        const { inventory } = get();
+        return inventory.equipped.skills.some(s => s.id === skillId);
       },
 
       // ========================================
@@ -383,6 +479,10 @@ export const useGameStore = create<GameStore>()(
           stats: {
             ...state.stats,
             enemiesKilled: state.stats.enemiesKilled + 1,
+            enemiesKilledByType: {
+              ...state.stats.enemiesKilledByType,
+              [enemy.id]: (state.stats.enemiesKilledByType[enemy.id] || 0) + 1,
+            },
           },
           currentLoot: drops[0] || null,
         }));
@@ -553,6 +653,7 @@ export const useGameStore = create<GameStore>()(
               hp: Math.min(s.player.maxHp, Math.max(0, s.player.hp + (effects.hp || 0))),
               hunger: Math.max(0, s.player.hunger + (effects.hunger || 0)),
               gold: Math.max(0, s.player.gold + (effects.gold || 0)),
+              karma: Math.max(-100, Math.min(100, s.player.karma + (effects.karma || 0))),
             },
             currentEvent: null,
           }));
@@ -761,6 +862,33 @@ export const useGameStore = create<GameStore>()(
 
       resetGame: () => {
         set(createInitialState());
+      },
+      
+      // ========================================
+      // QUEST ACTIONS
+      // ========================================
+      
+      acceptQuest: (questId: string) => {
+        set(state => {
+          if (state.activeQuests.includes(questId) || state.completedQuests.includes(questId)) {
+            return state;
+          }
+          return {
+            activeQuests: [...state.activeQuests, questId],
+          };
+        });
+      },
+      
+      completeQuest: (questId: string, reward: { gold: number; karma?: number }) => {
+        set(state => ({
+          activeQuests: state.activeQuests.filter(id => id !== questId),
+          completedQuests: [...state.completedQuests, questId],
+          player: {
+            ...state.player,
+            gold: state.player.gold + reward.gold,
+            karma: Math.max(-100, Math.min(100, state.player.karma + (reward.karma || 0))),
+          },
+        }));
       },
     }),
     {

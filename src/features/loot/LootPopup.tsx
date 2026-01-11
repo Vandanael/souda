@@ -1,5 +1,7 @@
 import { useGameStore } from '../../store/gameStore';
+import { useEffect } from 'react';
 import type { LootType } from '../../types';
+import { sounds } from '../../utils/sounds';
 
 const TYPE_COLORS: Record<LootType, string> = {
   weapon: 'border-red-500 bg-gradient-to-b from-red-950 to-zinc-900',
@@ -25,6 +27,10 @@ export function LootPopup() {
   const getCurrentWeight = useGameStore(state => state.getCurrentWeight);
   const maxWeight = useGameStore(state => state.inventory.maxWeight);
   
+  useEffect(() => {
+    if (currentLoot) sounds.lootFound();
+  }, [currentLoot]);
+  
   if (!currentLoot) return null;
   
   const currentWeight = getCurrentWeight();
@@ -32,6 +38,7 @@ export function LootPopup() {
   const weightAfter = currentWeight + currentLoot.weight;
   
   const handleTake = () => {
+    sounds.lootTake();
     takeLoot();
   };
 

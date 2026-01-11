@@ -5,43 +5,46 @@ import { rollLoot } from './loot';
 // CARTE DU PROTOTYPE - SOUDA: Terra Incognita
 // ============================================
 
-// Configuration de la grille
-export const GRID_SIZE = 5;
-export const HUB_POSITION = { x: 2, y: 2 }; // Centre de la grille 5x5
+// Configuration de la grille (7x7)
+export const GRID_SIZE = 7;
+export const HUB_POSITION = { x: 3, y: 3 }; // Centre de la grille 7x7
 
-// Layout de la carte prototype (5x5)
-// Le hub est au centre, entouré de différents biomes
+// Layout de la carte prototype (7x7)
 const MAP_LAYOUT: TileType[][] = [
-  // y=0 (Nord)
-  ['ruins',  'forest', 'hills',  'forest', 'ruins' ],
+  // y=0 (Nord - zone dangereuse)
+  ['ruins',  'ruins',  'hills',  'forest', 'hills',  'ruins',  'ruins' ],
   // y=1
-  ['plain',  'plain',  'forest', 'plain',  'hills' ],
-  // y=2 (Centre - Hub)
-  ['forest', 'plain',  'hub',    'plain',  'village'],
-  // y=3
-  ['hills',  'forest', 'plain',  'forest', 'ruins' ],
-  // y=4 (Sud)
-  ['village','plain',  'hills',  'plain',  'forest'],
+  ['hills',  'forest', 'plain',  'forest', 'plain',  'forest', 'hills' ],
+  // y=2
+  ['forest', 'plain',  'village','plain',  'village','plain',  'forest'],
+  // y=3 (Centre - Hub)
+  ['plain',  'forest', 'plain',  'hub',    'plain',  'forest', 'plain' ],
+  // y=4
+  ['forest', 'plain',  'village','plain',  'hills',  'plain',  'forest'],
+  // y=5
+  ['hills',  'forest', 'plain',  'forest', 'plain',  'forest', 'hills' ],
+  // y=6 (Sud - zone dangereuse)
+  ['ruins',  'ruins',  'hills',  'forest', 'hills',  'ruins',  'ruins' ],
 ];
 
 // Couleurs Tailwind par biome
 export const BIOME_COLORS: Record<TileType, string> = {
   hub: 'bg-amber-500',
-  plain: 'bg-lime-500',
+  plain: 'bg-lime-600',
   forest: 'bg-emerald-700',
   hills: 'bg-stone-500',
   ruins: 'bg-slate-600',
-  village: 'bg-orange-400',
+  village: 'bg-orange-500',
 };
 
 // Couleurs de survol par biome
 export const BIOME_HOVER_COLORS: Record<TileType, string> = {
   hub: 'hover:bg-amber-400',
-  plain: 'hover:bg-lime-400',
+  plain: 'hover:bg-lime-500',
   forest: 'hover:bg-emerald-600',
   hills: 'hover:bg-stone-400',
   ruins: 'hover:bg-slate-500',
-  village: 'hover:bg-orange-300',
+  village: 'hover:bg-orange-400',
 };
 
 // Noms des biomes
@@ -52,16 +55,6 @@ export const BIOME_NAMES: Record<TileType, string> = {
   hills: 'Collines',
   ruins: 'Ruines',
   village: 'Village Abandonné',
-};
-
-// Icônes des biomes
-export const BIOME_ICONS: Record<TileType, string> = {
-  hub: '🏠',
-  plain: '🌾',
-  forest: '🌲',
-  hills: '⛰️',
-  ruins: '🏚️',
-  village: '🏘️',
 };
 
 // Temps de voyage par biome (en heures)
@@ -83,10 +76,10 @@ function createTile(x: number, y: number, isHub: boolean): Tile {
     x,
     y,
     type,
-    isRevealed: isHub, // Seul le hub est révélé au départ
+    isRevealed: isHub,
     isExplored: isHub,
-    hasDanger: false,  // Les dangers sont générés au moment de l'exploration
-    loot: null,        // Le loot est généré au moment de l'exploration
+    hasDanger: false,
+    loot: null,
   };
 }
 
@@ -105,23 +98,17 @@ export function generateMap(): Map<string, Tile> {
   return tiles;
 }
 
-// Génère le contenu d'une tuile (loot, danger) lors de l'exploration
+// Génère le contenu d'une tuile lors de l'exploration
 export function generateTileContent(tile: Tile): { loot: ReturnType<typeof rollLoot>; hasDanger: boolean } {
-  // Ne pas générer de contenu pour le hub
   if (tile.type === 'hub') {
     return { loot: null, hasDanger: false };
   }
   
-  // Générer le loot
   const loot = rollLoot(tile.type);
-  
-  // Les dangers sont déterminés par la propriété hasDanger existante
-  // ou générés aléatoirement lors de la première visite
-  // (géré dans le store lors du mouvement)
   
   return {
     loot,
-    hasDanger: false, // Le danger est géré séparément via spawnEnemy
+    hasDanger: false,
   };
 }
 
@@ -129,8 +116,6 @@ export function generateTileContent(tile: Tile): { loot: ReturnType<typeof rollL
 export function areAdjacent(pos1: { x: number; y: number }, pos2: { x: number; y: number }): boolean {
   const dx = Math.abs(pos1.x - pos2.x);
   const dy = Math.abs(pos1.y - pos2.y);
-  
-  // Adjacent = différence de 1 sur un seul axe (pas de diagonale)
   return (dx === 1 && dy === 0) || (dx === 0 && dy === 1);
 }
 

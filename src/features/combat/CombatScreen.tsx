@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useGameStore } from '../../store/gameStore';
+import { sounds } from '../../utils/sounds';
 
 export function CombatScreen() {
   const combat = useGameStore(state => state.combat);
@@ -14,6 +15,10 @@ export function CombatScreen() {
   const [isResolving, setIsResolving] = useState(false);
   
   const { enemy, enemyHp } = combat;
+  
+  useEffect(() => {
+    if (enemy && combat.isActive) sounds.combatStart();
+  }, [enemy, combat.isActive]);
   
   if (!enemy || !combat.isActive) return null;
   
@@ -50,11 +55,14 @@ export function CombatScreen() {
   
   const handleAttack = async () => {
     setIsResolving(true);
+    sounds.attack();
     const res = performCombat();
     
     if (res.victory) {
+      sounds.victory();
       setResult(`Victoire ! ${enemy.name} est vaincu.`);
     } else if (res.died) {
+      sounds.defeat();
       setResult('Tu es tombé au combat...');
     }
     
@@ -66,11 +74,13 @@ export function CombatScreen() {
   
   const handleFlee = () => {
     setIsResolving(true);
+    sounds.flee();
     const res = tryFlee();
     
     if (res.fled) {
       setResult('Tu fuis le combat !');
     } else {
+      sounds.error();
       setResult(`Fuite échouée ! -${res.damageTaken} HP`);
     }
     

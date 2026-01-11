@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { useGameStore } from './store/gameStore';
 import { WorldMap } from './features/map/WorldMap';
 import { StatusBar } from './features/ui/StatusBar';
@@ -7,12 +8,33 @@ import { CombatScreen } from './features/combat/CombatScreen';
 import { HubScreen } from './features/hub/HubScreen';
 import { GameOverScreen } from './features/ui/GameOverScreen';
 import { EventScreen } from './features/events/EventScreen';
+import { TutorialScreen } from './features/ui/TutorialScreen';
+
+const TUTORIAL_KEY = 'souda-tutorial-done';
 
 function App() {
   const screen = useGameStore(state => state.screen);
   const resetGame = useGameStore(state => state.resetGame);
   const currentLoot = useGameStore(state => state.currentLoot);
   const currentEvent = useGameStore(state => state.currentEvent);
+  
+  const [showTutorial, setShowTutorial] = useState(false);
+  
+  useEffect(() => {
+    const tutorialDone = localStorage.getItem(TUTORIAL_KEY);
+    if (!tutorialDone) {
+      setShowTutorial(true);
+    }
+  }, []);
+  
+  const handleTutorialComplete = () => {
+    localStorage.setItem(TUTORIAL_KEY, 'true');
+    setShowTutorial(false);
+  };
+  
+  if (showTutorial) {
+    return <TutorialScreen onComplete={handleTutorialComplete} />;
+  }
 
   return (
     <div className="min-h-screen bg-zinc-900 text-white flex flex-col">
@@ -63,8 +85,12 @@ function App() {
       </main>
 
       {/* Footer */}
-      <footer className="p-4 border-t border-zinc-800 text-center text-xs text-zinc-600">
-        Prototype v0.1
+      <footer className="p-4 border-t border-zinc-800 text-center text-xs text-zinc-600 flex items-center justify-center gap-4">
+        <span>Prototype v0.2</span>
+        <span className="flex items-center gap-1 text-emerald-600">
+          <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+          Sauvegarde auto
+        </span>
       </footer>
 
       {/* Overlays */}

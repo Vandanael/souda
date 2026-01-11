@@ -50,6 +50,7 @@ export interface PlayerState {
   maxHp: number;
   hunger: number;       // Jours restants
   gold: number;
+  karma: number;        // -100 à +100, 0 = neutre
 }
 
 export interface InventoryState {
@@ -147,7 +148,13 @@ export interface GameState {
     enemiesKilled: number;
     itemsCollected: number;
     deaths: number;
+    biomesExplored: Record<string, number>;
+    enemiesKilledByType: Record<string, number>;
   };
+  
+  // Quêtes
+  activeQuests: string[];
+  completedQuests: string[];
 }
 
 // === ACTIONS ===
@@ -162,12 +169,16 @@ export interface GameActions {
   takeLoot: () => { success: boolean; reason?: string };
   leaveLoot: () => void;
   dropItem: (index: number) => void;
+  useItem: (index: number) => { success: boolean; message: string };
+  sellItem: (index: number) => { success: boolean; gold: number; message: string };
   
   // Player
   getCurrentWeight: () => number;
   canCarryMore: (weight: number) => boolean;
   getPlayerAtk: () => number;
   getPlayerDef: () => number;
+  getPlayerMaxHp: () => number;
+  hasSkill: (skillId: string) => boolean;
   
   // Combat (simplifié)
   startCombat: (enemy: Enemy) => void;
@@ -193,6 +204,10 @@ export interface GameActions {
   // Game
   setScreen: (screen: GameScreen) => void;
   resetGame: () => void;
+  
+  // Quests
+  acceptQuest: (questId: string) => void;
+  completeQuest: (questId: string, reward: { gold: number; karma?: number }) => void;
 }
 
 export interface CombatResult {

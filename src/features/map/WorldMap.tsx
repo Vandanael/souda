@@ -1,6 +1,7 @@
 import { useGameStore } from '../../store/gameStore';
 import { Tile } from './Tile';
 import { GRID_SIZE, areAdjacent, BIOME_NAMES } from '../../data/map';
+import { sounds } from '../../utils/sounds';
 
 export function WorldMap() {
   const world = useGameStore(state => state.world);
@@ -67,7 +68,10 @@ export function WorldMap() {
                 isPlayerHere={isPlayerHere}
                 isClickable={isClickable}
                 hasVigilant={hasVigilant}
-                onClick={() => moveTo(tile.x, tile.y)}
+                onClick={() => {
+                  sounds.move();
+                  moveTo(tile.x, tile.y);
+                }}
               />
             );
           })
