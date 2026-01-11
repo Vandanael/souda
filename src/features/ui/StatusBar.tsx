@@ -13,101 +13,127 @@ export function StatusBar() {
   const def = getPlayerDef();
   const maxHp = getPlayerMaxHp();
   
-  // Calculs de pourcentages
   const hpPercent = (player.hp / maxHp) * 100;
-  const weightPercent = (weight / maxWeight) * 100;
-  
-  // États critiques
-  const isHpLow = player.hp < 30;
-  const isHpMedium = player.hp < 60 && player.hp >= 30;
-  const isHungerLow = player.hunger < 1;
-  const isHungerMedium = player.hunger < 2 && player.hunger >= 1;
-  const isOverweight = weightPercent > 90;
+  const isHpCritical = player.hp < 30;
+  const isHungerCritical = player.hunger < 1;
 
   return (
-    <div className="flex flex-wrap items-center justify-center gap-6 p-4 bg-zinc-800/80 backdrop-blur rounded-xl border border-zinc-700">
-      {/* HP */}
-      <div className="flex items-center gap-3">
-        <span className={`text-sm font-medium ${isHpLow ? 'text-red-400' : isHpMedium ? 'text-yellow-400' : 'text-zinc-400'}`}>
+    <div 
+      className="card-metal p-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2"
+    >
+      {/* HP avec barre */}
+      <div className="flex items-center gap-2 min-w-[100px]">
+        <span 
+          className="text-xs font-semibold uppercase"
+          style={{ color: isHpCritical ? 'var(--danger-light)' : 'var(--text-muted)' }}
+        >
           HP
         </span>
-        <div className="flex flex-col">
-          <span className={`font-bold tabular-nums ${isHpLow ? 'text-red-400 animate-pulse' : isHpMedium ? 'text-yellow-400' : 'text-emerald-400'}`}>
+        <div className="flex-1 flex flex-col gap-0.5">
+          <span 
+            className={`font-bold tabular-nums text-sm ${isHpCritical ? 'animate-pulse' : ''}`}
+            style={{ color: isHpCritical ? 'var(--danger-light)' : 'var(--positive-light)' }}
+          >
             {player.hp}/{maxHp}
           </span>
-          <div className="w-20 h-1.5 bg-zinc-700 rounded-full overflow-hidden">
+          <div 
+            className="h-1 rounded-full overflow-hidden"
+            style={{ background: 'var(--bg-void)' }}
+          >
             <div 
-              className={`h-full transition-all ${isHpLow ? 'bg-red-500' : isHpMedium ? 'bg-yellow-500' : 'bg-emerald-500'}`}
-              style={{ width: `${hpPercent}%` }}
+              className="h-full transition-all duration-300"
+              style={{ 
+                width: `${hpPercent}%`,
+                background: isHpCritical ? 'var(--danger-light)' : 'var(--positive)'
+              }}
             />
           </div>
         </div>
       </div>
       
-      {/* Séparateur */}
-      <div className="h-8 w-px bg-zinc-700" />
+      {/* Separateur */}
+      <div className="h-6 w-px hidden sm:block" style={{ background: '#2a2a2a' }} />
       
       {/* Faim */}
       <div className="flex items-center gap-2">
-        <span className={`text-sm font-medium ${isHungerLow ? 'text-red-400' : isHungerMedium ? 'text-yellow-400' : 'text-zinc-400'}`}>
+        <span 
+          className="text-xs font-semibold uppercase"
+          style={{ color: isHungerCritical ? 'var(--danger-light)' : 'var(--text-muted)' }}
+        >
           Faim
         </span>
-        <span className={`font-bold tabular-nums ${isHungerLow ? 'text-red-400 animate-pulse' : isHungerMedium ? 'text-yellow-400' : 'text-zinc-300'}`}>
+        <span 
+          className={`font-bold tabular-nums text-sm ${isHungerCritical ? 'animate-pulse' : ''}`}
+          style={{ color: isHungerCritical ? 'var(--danger-light)' : 'var(--text-primary)' }}
+        >
           {player.hunger.toFixed(1)}j
         </span>
       </div>
       
-      {/* Séparateur */}
-      <div className="h-8 w-px bg-zinc-700" />
+      {/* Separateur */}
+      <div className="h-6 w-px hidden sm:block" style={{ background: '#2a2a2a' }} />
       
       {/* Poids */}
       <div className="flex items-center gap-2">
-        <span className={`text-sm font-medium ${isOverweight ? 'text-red-400' : 'text-zinc-400'}`}>
+        <span 
+          className="text-xs font-semibold uppercase"
+          style={{ color: 'var(--text-muted)' }}
+        >
           Poids
         </span>
-        <span className={`font-bold tabular-nums ${isOverweight ? 'text-red-400 animate-pulse' : weightPercent > 70 ? 'text-yellow-400' : 'text-zinc-300'}`}>
-          {weight.toFixed(1)}/{maxWeight}kg
+        <span 
+          className="font-bold tabular-nums text-sm"
+          style={{ 
+            color: weight > maxWeight * 0.9 ? 'var(--danger-light)' : 'var(--text-primary)' 
+          }}
+        >
+          {weight.toFixed(1)}/{maxWeight}
         </span>
       </div>
       
-      {/* Séparateur */}
-      <div className="h-8 w-px bg-zinc-700" />
+      {/* Separateur */}
+      <div className="h-6 w-px hidden sm:block" style={{ background: '#2a2a2a' }} />
       
       {/* Stats combat */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         <div className="flex items-center gap-1">
-          <span className="text-sm text-zinc-400">ATK</span>
-          <span className="text-red-400 font-bold">{atk}</span>
+          <span className="text-xs" style={{ color: 'var(--text-dim)' }}>ATK</span>
+          <span className="font-bold text-sm" style={{ color: 'var(--stat-atk)' }}>{atk}</span>
         </div>
         <div className="flex items-center gap-1">
-          <span className="text-sm text-zinc-400">DEF</span>
-          <span className="text-blue-400 font-bold">{def}</span>
+          <span className="text-xs" style={{ color: 'var(--text-dim)' }}>DEF</span>
+          <span className="font-bold text-sm" style={{ color: 'var(--stat-def)' }}>{def}</span>
         </div>
       </div>
       
-      {/* Séparateur */}
-      <div className="h-8 w-px bg-zinc-700" />
+      {/* Separateur */}
+      <div className="h-6 w-px hidden sm:block" style={{ background: '#2a2a2a' }} />
       
       {/* Or */}
       <div className="flex items-center gap-2">
-        <span className="text-sm text-zinc-400">Or</span>
-        <span className="font-bold text-amber-400 tabular-nums">{player.gold}</span>
-      </div>
-      
-      {/* Séparateur */}
-      <div className="h-8 w-px bg-zinc-700" />
-      
-      {/* Karma */}
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-zinc-400">Karma</span>
-        <span className={`font-bold tabular-nums ${
-          player.karma > 20 ? 'text-emerald-400' : 
-          player.karma < -20 ? 'text-red-400' : 
-          'text-zinc-400'
-        }`}>
-          {player.karma > 0 ? '+' : ''}{player.karma}
+        <span className="text-xs" style={{ color: 'var(--text-dim)' }}>Or</span>
+        <span className="font-bold tabular-nums text-sm" style={{ color: 'var(--copper)' }}>
+          {player.gold}
         </span>
       </div>
+      
+      {/* Karma (compact) */}
+      {player.karma !== 0 && (
+        <>
+          <div className="h-6 w-px hidden sm:block" style={{ background: '#2a2a2a' }} />
+          <div className="flex items-center gap-1">
+            <span className="text-xs" style={{ color: 'var(--text-dim)' }}>K</span>
+            <span 
+              className="font-bold text-sm tabular-nums"
+              style={{ 
+                color: player.karma > 0 ? 'var(--positive-light)' : 'var(--danger-light)' 
+              }}
+            >
+              {player.karma > 0 ? '+' : ''}{player.karma}
+            </span>
+          </div>
+        </>
+      )}
     </div>
   );
 }

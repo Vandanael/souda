@@ -1,25 +1,9 @@
 import { useState, useMemo } from 'react';
 import { useGameStore } from '../../store/gameStore';
-import type { LootCard, LootType } from '../../types';
+import type { LootCard } from '../../types';
 import { getRandomRumors } from '../../data/rumors';
 import { QUESTS, type Quest } from '../../data/quests';
 import { sounds } from '../../utils/sounds';
-
-const TYPE_LABELS: Record<LootType, string> = {
-  weapon: 'Arme',
-  armor: 'Armure',
-  consumable: 'Conso.',
-  skill: 'Skill',
-  treasure: 'Trésor',
-};
-
-const TYPE_COLORS: Record<LootType, string> = {
-  weapon: 'text-red-400',
-  armor: 'text-blue-400',
-  consumable: 'text-green-400',
-  skill: 'text-purple-400',
-  treasure: 'text-amber-400',
-};
 
 type HubTab = 'rest' | 'shop' | 'quests' | 'equipment' | 'chest' | 'rumors' | 'stats';
 
@@ -51,11 +35,11 @@ export function HubScreen() {
     if (success) {
       sounds.purchase();
       setMessage(option === 'basic' 
-        ? 'Tu te sens mieux après un bon repas.' 
+        ? 'Tu te sens mieux apres un bon repas.' 
         : 'Une nuit parfaite. Tu es comme neuf !');
     } else {
       sounds.error();
-      setMessage('Pas assez de pièces...');
+      setMessage('Pas assez de pieces...');
     }
     setTimeout(() => setMessage(null), 3000);
   };
@@ -63,7 +47,7 @@ export function HubScreen() {
   const handleEquip = (item: LootCard) => {
     sounds.lootTake();
     equipItem(item);
-    setMessage(`${item.name} équipé !`);
+    setMessage(`${item.name} equipe !`);
     setTimeout(() => setMessage(null), 2000);
   };
   
@@ -80,82 +64,99 @@ export function HubScreen() {
   };
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-b from-amber-950/90 to-zinc-900 z-40 overflow-y-auto">
-      <div className="max-w-4xl mx-auto p-4 sm:p-6 pb-24">
-        {/* Header */}
-        <div className="text-center mb-6">
-          <h1 className="text-3xl sm:text-4xl font-bold text-amber-400 mb-2">
-            Auberge du Carrefour
-          </h1>
-          <p className="text-zinc-400 italic">
-            "Bienvenue, mercenaire. Qu'est-ce qui te ferait plaisir ?"
+    <div 
+      className="fixed inset-0 z-40 flex flex-col"
+      style={{ background: 'var(--bg-dark)' }}
+    >
+      {/* Header */}
+      <div className="safe-top px-4 py-3 text-center border-b" style={{ borderColor: '#2a2a2a' }}>
+        <h1 
+          className="text-xl font-bold"
+          style={{ color: 'var(--copper)' }}
+        >
+          Auberge du Carrefour
+        </h1>
+        <p 
+          className="text-xs italic mt-1"
+          style={{ color: 'var(--text-muted)' }}
+        >
+          "Bienvenue, mercenaire."
+        </p>
+      </div>
+      
+      {/* Stats joueur compact */}
+      <div 
+        className="px-4 py-2 flex justify-center gap-6 border-b"
+        style={{ borderColor: '#1a1a1a' }}
+      >
+        <div className="text-center">
+          <p className="text-xs" style={{ color: 'var(--text-dim)' }}>HP</p>
+          <p 
+            className="font-bold"
+            style={{ color: player.hp < 50 ? 'var(--danger-light)' : 'var(--positive-light)' }}
+          >
+            {player.hp}/{player.maxHp}
           </p>
         </div>
-        
-        {/* Stats joueur */}
-        <div className="flex flex-wrap justify-center gap-6 mb-6 p-4 bg-zinc-800/50 rounded-xl border border-zinc-700">
-          <div className="text-center">
-            <p className="text-xs text-zinc-500 uppercase">HP</p>
-            <p className={`font-bold ${player.hp < 50 ? 'text-red-400' : 'text-emerald-400'}`}>
-              {player.hp}/{player.maxHp}
-            </p>
-          </div>
-          <div className="text-center">
-            <p className="text-xs text-zinc-500 uppercase">Faim</p>
-            <p className={`font-bold ${player.hunger < 2 ? 'text-yellow-400' : 'text-zinc-300'}`}>
-              {player.hunger.toFixed(1)}j
-            </p>
-          </div>
-          <div className="text-center">
-            <p className="text-xs text-zinc-500 uppercase">Or</p>
-            <p className="font-bold text-amber-400">{player.gold}</p>
-          </div>
+        <div className="text-center">
+          <p className="text-xs" style={{ color: 'var(--text-dim)' }}>Faim</p>
+          <p 
+            className="font-bold"
+            style={{ color: player.hunger < 2 ? 'var(--copper)' : 'var(--text-primary)' }}
+          >
+            {player.hunger.toFixed(1)}j
+          </p>
         </div>
-        
-        {/* Message */}
-        {message && (
-          <div className="mb-4 p-3 bg-zinc-700/50 rounded-lg text-center animate-in fade-in">
-            {message}
-          </div>
-        )}
-        
-        {/* Tabs */}
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-          {[
-            { id: 'rest' as const, label: 'Repos' },
-            { id: 'shop' as const, label: 'Marchand' },
-            { id: 'quests' as const, label: 'Quêtes' },
-            { id: 'equipment' as const, label: 'Équipement' },
-            { id: 'chest' as const, label: 'Coffre' },
-            { id: 'rumors' as const, label: 'Annonces' },
-            { id: 'stats' as const, label: 'Stats' },
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`
-                flex-1 min-w-20 p-3 rounded-lg transition-all whitespace-nowrap text-sm
-                ${activeTab === tab.id 
-                  ? 'bg-amber-600 text-white scale-105' 
-                  : 'bg-zinc-700 hover:bg-zinc-600'}
-              `}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <div className="text-center">
+          <p className="text-xs" style={{ color: 'var(--text-dim)' }}>Or</p>
+          <p className="font-bold" style={{ color: 'var(--copper)' }}>{player.gold}</p>
         </div>
-        
-        {/* Contenu tab */}
-        <div className="bg-zinc-800/80 rounded-xl p-4 sm:p-6 min-h-[300px] border border-zinc-700">
-          {activeTab === 'rest' && (
-            <RestTab player={player} onRest={handleRest} />
-          )}
-          {activeTab === 'shop' && (
-            <ShopTab 
-              inventory={inventory}
-              onSell={handleSell}
-            />
-          )}
+      </div>
+      
+      {/* Message feedback */}
+      {message && (
+        <div 
+          className="mx-4 mt-2 p-2 text-center text-sm animate-in fade-in rounded"
+          style={{ background: 'var(--bg-surface)', border: '1px solid #3a3a3a' }}
+        >
+          {message}
+        </div>
+      )}
+      
+      {/* Tabs - Scrollable horizontal */}
+      <div 
+        className="flex gap-1 px-4 py-2 overflow-x-auto"
+        style={{ scrollbarWidth: 'none' }}
+      >
+        {[
+          { id: 'rest' as const, label: 'Repos' },
+          { id: 'shop' as const, label: 'Marchand' },
+          { id: 'quests' as const, label: 'Quetes' },
+          { id: 'equipment' as const, label: 'Equipement' },
+          { id: 'chest' as const, label: 'Coffre' },
+          { id: 'rumors' as const, label: 'Annonces' },
+          { id: 'stats' as const, label: 'Stats' },
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className="flex-shrink-0 px-3 py-2 rounded text-sm font-semibold transition-all active:scale-95"
+            style={{
+              background: activeTab === tab.id ? 'var(--copper)' : 'var(--bg-surface)',
+              color: activeTab === tab.id ? 'var(--bg-dark)' : 'var(--text-muted)',
+              border: `1px solid ${activeTab === tab.id ? 'var(--copper-light)' : '#2a2a2a'}`,
+            }}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      
+      {/* Contenu tab - Scrollable */}
+      <div className="flex-1 overflow-y-auto px-4 py-3">
+        <div className="card-metal p-4 min-h-[200px]">
+          {activeTab === 'rest' && <RestTab player={player} onRest={handleRest} />}
+          {activeTab === 'shop' && <ShopTab inventory={inventory} onSell={handleSell} />}
           {activeTab === 'quests' && (
             <QuestsTab 
               stats={stats}
@@ -166,31 +167,24 @@ export function HubScreen() {
               setMessage={setMessage}
             />
           )}
-          {activeTab === 'equipment' && (
-            <EquipmentTab 
-              inventory={inventory} 
-              onEquip={handleEquip}
-            />
-          )}
-          {activeTab === 'chest' && (
-            <ChestTab 
-              inventory={inventory}
-              onStore={storeInChest}
-              onRetrieve={retrieveFromChest}
-            />
-          )}
-          {activeTab === 'rumors' && (
-            <RumorsTab rumors={rumors} />
-          )}
-          {activeTab === 'stats' && (
-            <StatsTab stats={stats} />
-          )}
+          {activeTab === 'equipment' && <EquipmentTab inventory={inventory} onEquip={handleEquip} />}
+          {activeTab === 'chest' && <ChestTab inventory={inventory} onStore={storeInChest} onRetrieve={retrieveFromChest} />}
+          {activeTab === 'rumors' && <RumorsTab rumors={rumors} />}
+          {activeTab === 'stats' && <StatsTab stats={stats} />}
         </div>
-        
-        {/* Bouton partir */}
+      </div>
+      
+      {/* Zone du pouce - Bouton partir */}
+      <div 
+        className="p-4"
+        style={{ 
+          paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
+          background: 'linear-gradient(to top, var(--bg-dark) 90%, transparent)'
+        }}
+      >
         <button
           onClick={() => setScreen('map')}
-          className="w-full mt-6 p-4 bg-emerald-700 hover:bg-emerald-600 rounded-xl font-bold text-lg transition-all hover:scale-[1.02] active:scale-[0.98] border border-emerald-600"
+          className="btn-copper w-full"
         >
           Repartir en Exploration
         </button>
@@ -206,51 +200,42 @@ function RestTab({ player, onRest }: {
   onRest: (option: 'basic' | 'luxury') => void;
 }) {
   const options = [
-    { 
-      id: 'basic' as const, 
-      name: 'Repos & Repas', 
-      cost: 5, 
-      heal: 50, 
-      hunger: 3,
-      desc: 'Ragoût chaud et pain frais',
-    },
-    { 
-      id: 'luxury' as const, 
-      name: 'Chambre Luxe', 
-      cost: 15, 
-      heal: 100, 
-      hunger: 4,
-      desc: 'Lit propre, eau chaude, vraie nourriture',
-    },
+    { id: 'basic' as const, name: 'Repos & Repas', cost: 5, heal: 50, hunger: 3, desc: 'Ragout chaud et pain frais' },
+    { id: 'luxury' as const, name: 'Chambre Luxe', cost: 15, heal: 100, hunger: 4, desc: 'Lit propre, eau chaude' },
   ];
   
   return (
     <div className="space-y-4">
-      <h3 className="text-xl font-bold mb-4">Services de l'auberge</h3>
+      <h3 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
+        Services de l'auberge
+      </h3>
       
       {options.map(opt => (
         <button
           key={opt.id}
           onClick={() => onRest(opt.id)}
           disabled={player.gold < opt.cost}
-          className={`
-            w-full p-4 rounded-xl text-left transition-all
-            ${player.gold >= opt.cost 
-              ? 'bg-zinc-700/50 hover:bg-zinc-700 hover:scale-[1.01]' 
-              : 'bg-zinc-800/50 opacity-50 cursor-not-allowed'}
-          `}
+          className="w-full p-4 rounded text-left transition-all active:scale-[0.98]"
+          style={{
+            background: player.gold >= opt.cost ? 'var(--bg-elevated)' : 'var(--bg-surface)',
+            border: `1px solid ${player.gold >= opt.cost ? '#3a3a3a' : '#1a1a1a'}`,
+            opacity: player.gold >= opt.cost ? 1 : 0.5,
+          }}
         >
           <div className="flex justify-between items-center">
             <div>
-              <h4 className="font-bold text-lg">{opt.name}</h4>
-              <p className="text-sm text-zinc-400">{opt.desc}</p>
+              <h4 className="font-bold" style={{ color: 'var(--text-primary)' }}>{opt.name}</h4>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{opt.desc}</p>
               <p className="text-sm mt-1">
-                <span className="text-red-400">+{opt.heal} HP</span>
-                {' · '}
-                <span className="text-green-400">+{opt.hunger}j faim</span>
+                <span style={{ color: 'var(--positive-light)' }}>+{opt.heal} HP</span>
+                <span style={{ color: 'var(--text-dim)' }}> / </span>
+                <span style={{ color: 'var(--copper)' }}>+{opt.hunger}j</span>
               </p>
             </div>
-            <div className={`text-2xl font-bold ${player.gold >= opt.cost ? 'text-amber-400' : 'text-zinc-500'}`}>
+            <div 
+              className="text-xl font-bold"
+              style={{ color: player.gold >= opt.cost ? 'var(--copper)' : 'var(--text-dim)' }}
+            >
               {opt.cost}
             </div>
           </div>
@@ -260,152 +245,96 @@ function RestTab({ player, onRest }: {
   );
 }
 
-function ShopTab({ inventory, onSell }: {
-  inventory: { bag: LootCard[] };
-  onSell: (index: number) => void;
-}) {
-  const sellableItems = inventory.bag
-    .map((item, index) => ({ item, index }))
-    .filter(({ item }) => item.value && item.value > 0);
-  
-  const totalValue = sellableItems.reduce((sum, { item }) => {
-    return sum + Math.floor((item.value || 0) * 0.6);
-  }, 0);
+function ShopTab({ inventory, onSell }: { inventory: { bag: LootCard[] }; onSell: (index: number) => void }) {
+  const sellable = inventory.bag.map((item, index) => ({ item, index })).filter(({ item }) => item.value && item.value > 0);
   
   return (
     <div>
-      <h3 className="text-xl font-bold mb-2">Marchand</h3>
-      <p className="text-sm text-zinc-400 mb-4">
-        "Je rachète tout à 60% du prix. C'est une affaire honnête."
-      </p>
+      <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Marchand</h3>
+      <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>"Je rachete a 60%."</p>
       
-      {sellableItems.length === 0 ? (
-        <div className="text-center py-8 text-zinc-500">
-          <p className="text-lg mb-2">Rien à vendre</p>
-          <p className="text-sm">Trouve des trésors en explorant !</p>
-        </div>
+      {sellable.length === 0 ? (
+        <p className="text-center py-6 italic" style={{ color: 'var(--text-dim)' }}>Rien a vendre</p>
       ) : (
-        <>
-          <div className="mb-4 p-3 bg-amber-900/30 rounded-lg border border-amber-700/50">
-            <p className="text-sm text-amber-300">
-              Valeur totale vendable : <span className="font-bold">{totalValue} pièces</span>
-            </p>
-          </div>
-          
-          <div className="space-y-2 max-h-64 overflow-y-auto">
-            {sellableItems.map(({ item, index }) => {
-              const sellPrice = Math.floor((item.value || 0) * 0.6);
-              return (
-                <div 
-                  key={`sell-${index}`}
-                  className="flex items-center gap-3 p-3 bg-zinc-700/30 rounded-lg"
-                >
-                  <span className={`text-xs font-medium ${TYPE_COLORS[item.type]}`}>
-                    {TYPE_LABELS[item.type]}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{item.name}</p>
-                    <p className="text-xs text-zinc-500">{item.description}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-amber-400 font-bold">{sellPrice}</p>
-                    <p className="text-xs text-zinc-500">pièces</p>
-                  </div>
-                  <button
-                    onClick={() => onSell(index)}
-                    className="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 rounded-lg text-sm font-bold transition-colors"
-                  >
-                    Vendre
-                  </button>
+        <div className="space-y-2">
+          {sellable.map(({ item, index }) => {
+            const price = Math.floor((item.value || 0) * 0.6);
+            return (
+              <div 
+                key={`sell-${index}`}
+                className="flex items-center gap-3 p-3 rounded"
+                style={{ background: 'var(--bg-surface)' }}
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium truncate" style={{ color: 'var(--text-primary)' }}>{item.name}</p>
+                  <p className="text-xs truncate" style={{ color: 'var(--text-dim)' }}>{item.description}</p>
                 </div>
-              );
-            })}
-          </div>
-        </>
+                <span className="font-bold" style={{ color: 'var(--copper)' }}>{price}</span>
+                <button onClick={() => onSell(index)} className="btn-copper text-sm px-3 py-1.5">
+                  Vendre
+                </button>
+              </div>
+            );
+          })}
+        </div>
       )}
     </div>
   );
 }
 
-function EquipmentTab({ inventory, onEquip }: {
-  inventory: {
-    bag: LootCard[];
-    equipped: { weapon: LootCard | null; armor: LootCard | null; skills: LootCard[] };
-  };
+function EquipmentTab({ inventory, onEquip }: { 
+  inventory: { bag: LootCard[]; equipped: { weapon: LootCard | null; armor: LootCard | null; skills: LootCard[] } };
   onEquip: (item: LootCard) => void;
 }) {
-  const equipables = inventory.bag.filter(item => item.type === 'weapon' || item.type === 'armor' || item.type === 'skill');
+  const equipables = inventory.bag.filter(item => ['weapon', 'armor', 'skill'].includes(item.type));
   
   return (
     <div>
-      <h3 className="text-xl font-bold mb-4">Équipement actuel</h3>
+      <h3 className="text-lg font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Equipement</h3>
       
-      {/* Équipé */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-        <div className="p-4 bg-zinc-700/30 rounded-xl">
-          <p className="text-xs text-zinc-500 uppercase mb-2">Arme</p>
+      <div className="grid grid-cols-2 gap-3 mb-4">
+        <div className="p-3 rounded" style={{ background: 'var(--bg-surface)' }}>
+          <p className="text-xs uppercase mb-1" style={{ color: 'var(--text-dim)' }}>Arme</p>
           {inventory.equipped.weapon ? (
-            <div>
-              <p className="font-bold">{inventory.equipped.weapon.name}</p>
-              <p className="text-red-400 text-sm">ATK +{inventory.equipped.weapon.stats.atk}</p>
-            </div>
-          ) : (
-            <p className="text-zinc-500 italic">—</p>
-          )}
+            <>
+              <p className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>{inventory.equipped.weapon.name}</p>
+              <p className="text-xs" style={{ color: 'var(--stat-atk)' }}>ATK +{inventory.equipped.weapon.stats.atk}</p>
+            </>
+          ) : <p style={{ color: 'var(--text-dim)' }}>-</p>}
         </div>
-        
-        <div className="p-4 bg-zinc-700/30 rounded-xl">
-          <p className="text-xs text-zinc-500 uppercase mb-2">Armure</p>
+        <div className="p-3 rounded" style={{ background: 'var(--bg-surface)' }}>
+          <p className="text-xs uppercase mb-1" style={{ color: 'var(--text-dim)' }}>Armure</p>
           {inventory.equipped.armor ? (
-            <div>
-              <p className="font-bold">{inventory.equipped.armor.name}</p>
-              <p className="text-blue-400 text-sm">DEF +{inventory.equipped.armor.stats.def}</p>
-            </div>
-          ) : (
-            <p className="text-zinc-500 italic">—</p>
-          )}
-        </div>
-        
-        <div className="p-4 bg-zinc-700/30 rounded-xl sm:col-span-2">
-          <p className="text-xs text-zinc-500 uppercase mb-2">Compétences</p>
-          {inventory.equipped.skills.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {inventory.equipped.skills.map((skill, i) => (
-                <span key={i} className="px-2 py-1 bg-purple-600/30 rounded text-purple-300 text-sm">
-                  {skill.name}
-                </span>
-              ))}
-            </div>
-          ) : (
-            <p className="text-zinc-500 italic">—</p>
-          )}
+            <>
+              <p className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>{inventory.equipped.armor.name}</p>
+              <p className="text-xs" style={{ color: 'var(--stat-def)' }}>DEF +{inventory.equipped.armor.stats.def}</p>
+            </>
+          ) : <p style={{ color: 'var(--text-dim)' }}>-</p>}
         </div>
       </div>
       
-      {/* Équipables dans le sac */}
-      <h4 className="font-bold mb-2 text-zinc-400">Dans ton sac :</h4>
+      <p className="text-sm font-bold mb-2" style={{ color: 'var(--text-muted)' }}>Dans le sac :</p>
       {equipables.length === 0 ? (
-        <p className="text-zinc-500 italic">Aucun équipement</p>
+        <p className="italic" style={{ color: 'var(--text-dim)' }}>Aucun equipement</p>
       ) : (
         <div className="space-y-2">
-          {equipables.map((item, index) => (
+          {equipables.map((item, i) => (
             <button
-              key={`${item.id}-${index}`}
+              key={`${item.id}-${i}`}
               onClick={() => onEquip(item)}
-              className="w-full p-3 bg-zinc-700/30 hover:bg-zinc-700/50 rounded-lg flex items-center gap-3 transition-all"
+              className="w-full p-3 rounded text-left transition-all active:scale-[0.98]"
+              style={{ background: 'var(--bg-surface)', border: '1px solid var(--copper-dark)' }}
             >
-              <span className={`text-xs font-medium ${TYPE_COLORS[item.type]}`}>
-                {TYPE_LABELS[item.type]}
-              </span>
-              <div className="flex-1 text-left">
-                <p className="font-bold">{item.name}</p>
-                <p className="text-sm text-zinc-400">
-                  {item.stats.atk && <span className="text-red-400">ATK +{item.stats.atk} </span>}
-                  {item.stats.def && <span className="text-blue-400">DEF +{item.stats.def} </span>}
-                  {item.type === 'skill' && <span className="text-purple-400">{item.description}</span>}
-                </p>
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>{item.name}</p>
+                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                    {item.stats.atk && <span style={{ color: 'var(--stat-atk)' }}>ATK +{item.stats.atk} </span>}
+                    {item.stats.def && <span style={{ color: 'var(--stat-def)' }}>DEF +{item.stats.def}</span>}
+                  </p>
+                </div>
+                <span className="text-xs" style={{ color: 'var(--copper)' }}>Equiper</span>
               </div>
-              <span className="text-emerald-400 text-sm">Équiper</span>
             </button>
           ))}
         </div>
@@ -420,70 +349,36 @@ function ChestTab({ inventory, onStore, onRetrieve }: {
   onRetrieve: (index: number) => void;
 }) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {/* Sac */}
+    <div className="grid grid-cols-2 gap-4">
       <div>
-        <h4 className="font-bold mb-3">Sac ({inventory.bag.length})</h4>
-        <div className="space-y-2 max-h-64 overflow-y-auto">
-          {inventory.bag.length === 0 ? (
-            <p className="text-zinc-500 italic text-sm">Vide</p>
-          ) : (
-            inventory.bag.map((item, index) => (
-              <div 
-                key={`bag-${index}`}
-                className="flex items-center gap-2 p-2 bg-zinc-700/30 rounded-lg"
-              >
-                <span className={`text-xs ${TYPE_COLORS[item.type]}`}>{TYPE_LABELS[item.type]}</span>
-                <span className="flex-1 truncate text-sm">{item.name}</span>
-                <button
-                  onClick={() => onStore(index)}
-                  className="text-xs px-2 py-1 bg-zinc-600 hover:bg-zinc-500 rounded"
-                >
-                  Stocker
-                </button>
-              </div>
-            ))
-          )}
+        <h4 className="font-bold mb-2" style={{ color: 'var(--text-muted)' }}>Sac ({inventory.bag.length})</h4>
+        <div className="space-y-1 max-h-48 overflow-y-auto">
+          {inventory.bag.map((item, i) => (
+            <div key={`bag-${i}`} className="flex items-center gap-2 p-2 rounded text-xs" style={{ background: 'var(--bg-surface)' }}>
+              <span className="flex-1 truncate" style={{ color: 'var(--text-primary)' }}>{item.name}</span>
+              <button onClick={() => onStore(i)} className="px-2 py-1 rounded" style={{ background: 'var(--bg-elevated)', color: 'var(--copper)' }}>+</button>
+            </div>
+          ))}
         </div>
       </div>
-      
-      {/* Coffre */}
       <div>
-        <h4 className="font-bold mb-3">Coffre ({inventory.chest.length})</h4>
-        <div className="space-y-2 max-h-64 overflow-y-auto">
+        <h4 className="font-bold mb-2" style={{ color: 'var(--text-muted)' }}>Coffre ({inventory.chest.length})</h4>
+        <div className="space-y-1 max-h-48 overflow-y-auto">
           {inventory.chest.length === 0 ? (
-            <p className="text-zinc-500 italic text-sm">Vide</p>
-          ) : (
-            inventory.chest.map((item, index) => (
-              <div 
-                key={`chest-${index}`}
-                className="flex items-center gap-2 p-2 bg-zinc-700/30 rounded-lg"
-              >
-                <span className={`text-xs ${TYPE_COLORS[item.type]}`}>{TYPE_LABELS[item.type]}</span>
-                <span className="flex-1 truncate text-sm">{item.name}</span>
-                <button
-                  onClick={() => onRetrieve(index)}
-                  className="text-xs px-2 py-1 bg-zinc-600 hover:bg-zinc-500 rounded"
-                >
-                  Prendre
-                </button>
-              </div>
-            ))
-          )}
+            <p className="text-xs italic" style={{ color: 'var(--text-dim)' }}>Vide</p>
+          ) : inventory.chest.map((item, i) => (
+            <div key={`chest-${i}`} className="flex items-center gap-2 p-2 rounded text-xs" style={{ background: 'var(--bg-surface)' }}>
+              <span className="flex-1 truncate" style={{ color: 'var(--text-primary)' }}>{item.name}</span>
+              <button onClick={() => onRetrieve(i)} className="px-2 py-1 rounded" style={{ background: 'var(--bg-elevated)', color: 'var(--copper)' }}>-</button>
+            </div>
+          ))}
         </div>
       </div>
     </div>
   );
 }
 
-function QuestsTab({ 
-  stats,
-  activeQuests,
-  completedQuests,
-  onAccept,
-  onComplete,
-  setMessage,
-}: {
+function QuestsTab({ stats, activeQuests, completedQuests, onAccept, onComplete, setMessage }: {
   stats: { tilesExplored: number; biomesExplored: Record<string, number>; enemiesKilledByType: Record<string, number> };
   activeQuests: string[];
   completedQuests: string[];
@@ -491,149 +386,91 @@ function QuestsTab({
   onComplete: (id: string, reward: { gold: number; karma?: number }) => void;
   setMessage: (msg: string) => void;
 }) {
-  const checkQuestProgress = (quest: Quest): { current: number; target: number; complete: boolean } => {
+  const checkProgress = (quest: Quest) => {
     let current = 0;
     const target = quest.target.count;
-    
     if (quest.type === 'explore') {
-      if (quest.target.biome) {
-        current = stats.biomesExplored[quest.target.biome] || 0;
-      } else {
-        current = stats.tilesExplored;
-      }
+      current = quest.target.biome ? (stats.biomesExplored[quest.target.biome] || 0) : stats.tilesExplored;
     } else if (quest.type === 'kill' && quest.target.enemyId) {
       current = stats.enemiesKilledByType[quest.target.enemyId] || 0;
     }
-    
     return { current: Math.min(current, target), target, complete: current >= target };
   };
   
-  const handleComplete = (quest: Quest) => {
-    sounds.purchase();
-    onComplete(quest.id, quest.reward);
-    setMessage(`Quête terminée ! +${quest.reward.gold} or`);
-    setTimeout(() => setMessage(''), 2000);
-  };
-  
-  const availableQuests = QUESTS.filter(q => !activeQuests.includes(q.id) && !completedQuests.includes(q.id));
-  const myActiveQuests = QUESTS.filter(q => activeQuests.includes(q.id));
+  const available = QUESTS.filter(q => !activeQuests.includes(q.id) && !completedQuests.includes(q.id));
+  const active = QUESTS.filter(q => activeQuests.includes(q.id));
   
   return (
     <div>
-      <h3 className="text-xl font-bold mb-4">Tableau des Quêtes</h3>
+      <h3 className="text-lg font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Quetes</h3>
       
-      {/* Quêtes actives */}
-      {myActiveQuests.length > 0 && (
-        <div className="mb-6">
-          <h4 className="font-bold text-amber-400 mb-3">Quêtes en cours</h4>
-          <div className="space-y-3">
-            {myActiveQuests.map(quest => {
-              const progress = checkQuestProgress(quest);
-              return (
-                <div key={quest.id} className="p-4 bg-amber-900/30 rounded-xl border border-amber-700/50">
-                  <div className="flex justify-between items-start mb-2">
-                    <h5 className="font-bold">{quest.title}</h5>
-                    <span className="text-amber-400 font-bold">{quest.reward.gold} or</span>
-                  </div>
-                  <p className="text-sm text-zinc-400 mb-2">{quest.description}</p>
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 h-2 bg-zinc-700 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-amber-500 transition-all"
-                        style={{ width: `${(progress.current / progress.target) * 100}%` }}
-                      />
-                    </div>
-                    <span className="text-sm font-bold">{progress.current}/{progress.target}</span>
-                    {progress.complete && (
-                      <button
-                        onClick={() => handleComplete(quest)}
-                        className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 rounded text-sm font-bold"
-                      >
-                        Terminer
-                      </button>
-                    )}
-                  </div>
+      {active.length > 0 && (
+        <div className="mb-4">
+          <p className="text-sm font-bold mb-2" style={{ color: 'var(--copper)' }}>En cours</p>
+          {active.map(q => {
+            const p = checkProgress(q);
+            return (
+              <div key={q.id} className="p-3 rounded mb-2" style={{ background: 'var(--bg-surface)', border: '1px solid var(--copper-dark)' }}>
+                <div className="flex justify-between mb-1">
+                  <span className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>{q.title}</span>
+                  <span className="text-sm" style={{ color: 'var(--copper)' }}>{q.reward.gold} or</span>
                 </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-      
-      {/* Quêtes disponibles */}
-      <div>
-        <h4 className="font-bold text-zinc-400 mb-3">Quêtes disponibles</h4>
-        {availableQuests.length === 0 ? (
-          <p className="text-zinc-500 italic">Aucune nouvelle quête pour le moment.</p>
-        ) : (
-          <div className="space-y-3">
-            {availableQuests.slice(0, 3).map(quest => (
-              <div key={quest.id} className="p-4 bg-zinc-700/30 rounded-xl">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <h5 className="font-bold">{quest.title}</h5>
-                    <p className="text-xs text-zinc-500">{quest.giver}</p>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-void)' }}>
+                    <div className="h-full" style={{ width: `${(p.current / p.target) * 100}%`, background: 'var(--copper)' }} />
                   </div>
-                  <span className="text-amber-400 font-bold">{quest.reward.gold} or</span>
+                  <span className="text-xs font-bold">{p.current}/{p.target}</span>
+                  {p.complete && (
+                    <button 
+                      onClick={() => { sounds.purchase(); onComplete(q.id, q.reward); setMessage(`+${q.reward.gold} or`); }}
+                      className="btn-copper text-xs px-2 py-1"
+                    >
+                      OK
+                    </button>
+                  )}
                 </div>
-                <p className="text-sm text-zinc-400 mb-3">{quest.description}</p>
-                <button
-                  onClick={() => {
-                    sounds.click();
-                    onAccept(quest.id);
-                    setMessage(`Quête acceptée : ${quest.title}`);
-                    setTimeout(() => setMessage(''), 2000);
-                  }}
-                  className="px-4 py-2 bg-amber-600 hover:bg-amber-500 rounded-lg text-sm font-bold transition-colors"
-                >
-                  Accepter
-                </button>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
-      
-      {/* Quêtes terminées */}
-      {completedQuests.length > 0 && (
-        <div className="mt-6 pt-4 border-t border-zinc-700">
-          <p className="text-sm text-zinc-500">
-            {completedQuests.length} quête{completedQuests.length > 1 ? 's' : ''} terminée{completedQuests.length > 1 ? 's' : ''}
-          </p>
+            );
+          })}
         </div>
       )}
+      
+      <p className="text-sm font-bold mb-2" style={{ color: 'var(--text-muted)' }}>Disponibles</p>
+      {available.slice(0, 3).map(q => (
+        <div key={q.id} className="p-3 rounded mb-2" style={{ background: 'var(--bg-surface)' }}>
+          <div className="flex justify-between mb-1">
+            <span className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>{q.title}</span>
+            <span className="text-sm" style={{ color: 'var(--copper)' }}>{q.reward.gold} or</span>
+          </div>
+          <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>{q.description}</p>
+          <button 
+            onClick={() => { sounds.click(); onAccept(q.id); setMessage(`Quete acceptee`); }}
+            className="btn-copper text-xs px-3 py-1.5"
+          >
+            Accepter
+          </button>
+        </div>
+      ))}
     </div>
   );
 }
 
-function RumorsTab({ rumors }: {
-  rumors: { id: string; author: string; date: string; content: string; hint?: string }[];
-}) {
+function RumorsTab({ rumors }: { rumors: { id: string; author: string; date: string; content: string; hint?: string }[] }) {
   return (
     <div>
-      <h3 className="text-xl font-bold mb-4">Tableau d'Annonces</h3>
-      <p className="text-sm text-zinc-500 mb-4">
-        Les voyageurs partagent leurs informations ici.
-      </p>
-      
-      <div className="space-y-4">
-        {rumors.map(rumor => (
+      <h3 className="text-lg font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Annonces</h3>
+      <div className="space-y-3">
+        {rumors.map(r => (
           <div 
-            key={rumor.id}
-            className="p-4 bg-zinc-700/30 rounded-xl border-l-4 border-amber-600/50"
+            key={r.id} 
+            className="p-3 rounded"
+            style={{ background: 'var(--bg-surface)', borderLeft: '3px solid var(--copper-dark)' }}
           >
-            <div className="flex justify-between items-start mb-2">
-              <span className="font-bold text-amber-400">{rumor.author}</span>
-              <span className="text-xs text-zinc-500">{rumor.date}</span>
+            <div className="flex justify-between mb-1">
+              <span className="font-bold text-sm" style={{ color: 'var(--copper)' }}>{r.author}</span>
+              <span className="text-xs" style={{ color: 'var(--text-dim)' }}>{r.date}</span>
             </div>
-            <p className="text-zinc-300 whitespace-pre-line text-sm leading-relaxed">
-              {rumor.content}
-            </p>
-            {rumor.hint && (
-              <p className="mt-2 text-xs text-zinc-500 italic">
-                [{rumor.hint}]
-              </p>
-            )}
+            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{r.content}</p>
           </div>
         ))}
       </div>
@@ -641,99 +478,26 @@ function RumorsTab({ rumors }: {
   );
 }
 
-function StatsTab({ stats }: {
-  stats: { 
-    tilesExplored: number; 
-    enemiesKilled: number; 
-    itemsCollected: number; 
-    deaths: number;
-    biomesExplored: Record<string, number>;
-    enemiesKilledByType: Record<string, number>;
-  };
-}) {
-  const biomeNames: Record<string, string> = {
-    hub: 'Hub',
-    plain: 'Plaines',
-    forest: 'Forêts',
-    hills: 'Collines',
-    ruins: 'Ruines',
-    village: 'Villages',
-  };
-  
-  const enemyNames: Record<string, string> = {
-    wolf: 'Loups',
-    bandit: 'Bandits',
-    mercenary: 'Mercenaires',
-    wolf_pack_alpha: 'Alphas',
-    deserter: 'Déserteurs',
-    patrol_chief: 'Chefs',
-    scavenger: 'Charognards',
-    wild_boar: 'Sangliers',
-    marauder: 'Maraudeurs',
-    hunter: 'Chasseurs',
-    veteran: 'Vétérans',
-  };
-  
+function StatsTab({ stats }: { stats: { tilesExplored: number; enemiesKilled: number; itemsCollected: number; deaths: number; biomesExplored: Record<string, number>; enemiesKilledByType: Record<string, number> } }) {
   return (
     <div>
-      <h3 className="text-xl font-bold mb-4">Statistiques</h3>
-      
-      {/* Stats principales */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-        <div className="p-4 bg-zinc-700/30 rounded-xl text-center">
-          <p className="text-2xl font-bold text-amber-400">{stats.tilesExplored}</p>
-          <p className="text-xs text-zinc-400">Zones explorées</p>
+      <h3 className="text-lg font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Statistiques</h3>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="p-3 rounded text-center" style={{ background: 'var(--bg-surface)' }}>
+          <p className="text-2xl font-bold" style={{ color: 'var(--copper)' }}>{stats.tilesExplored}</p>
+          <p className="text-xs" style={{ color: 'var(--text-dim)' }}>Zones</p>
         </div>
-        
-        <div className="p-4 bg-zinc-700/30 rounded-xl text-center">
-          <p className="text-2xl font-bold text-red-400">{stats.enemiesKilled}</p>
-          <p className="text-xs text-zinc-400">Ennemis vaincus</p>
+        <div className="p-3 rounded text-center" style={{ background: 'var(--bg-surface)' }}>
+          <p className="text-2xl font-bold" style={{ color: 'var(--stat-atk)' }}>{stats.enemiesKilled}</p>
+          <p className="text-xs" style={{ color: 'var(--text-dim)' }}>Ennemis</p>
         </div>
-        
-        <div className="p-4 bg-zinc-700/30 rounded-xl text-center">
-          <p className="text-2xl font-bold text-emerald-400">{stats.itemsCollected}</p>
-          <p className="text-xs text-zinc-400">Objets collectés</p>
+        <div className="p-3 rounded text-center" style={{ background: 'var(--bg-surface)' }}>
+          <p className="text-2xl font-bold" style={{ color: 'var(--positive-light)' }}>{stats.itemsCollected}</p>
+          <p className="text-xs" style={{ color: 'var(--text-dim)' }}>Objets</p>
         </div>
-        
-        <div className="p-4 bg-zinc-700/30 rounded-xl text-center">
-          <p className="text-2xl font-bold text-zinc-400">{stats.deaths}</p>
-          <p className="text-xs text-zinc-400">Morts</p>
-        </div>
-      </div>
-      
-      {/* Détails biomes */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="p-4 bg-zinc-700/30 rounded-xl">
-          <h4 className="font-bold text-sm text-zinc-400 mb-3">Biomes explorés</h4>
-          <div className="space-y-2">
-            {Object.entries(stats.biomesExplored)
-              .filter(([, count]) => count > 0)
-              .sort((a, b) => b[1] - a[1])
-              .map(([biome, count]) => (
-                <div key={biome} className="flex justify-between text-sm">
-                  <span>{biomeNames[biome] || biome}</span>
-                  <span className="text-amber-400 font-bold">{count}</span>
-                </div>
-              ))}
-          </div>
-        </div>
-        
-        <div className="p-4 bg-zinc-700/30 rounded-xl">
-          <h4 className="font-bold text-sm text-zinc-400 mb-3">Ennemis tués</h4>
-          <div className="space-y-2">
-            {Object.entries(stats.enemiesKilledByType).length === 0 ? (
-              <p className="text-zinc-500 italic text-sm">Aucun ennemi tué</p>
-            ) : (
-              Object.entries(stats.enemiesKilledByType)
-                .sort((a, b) => b[1] - a[1])
-                .map(([enemy, count]) => (
-                  <div key={enemy} className="flex justify-between text-sm">
-                    <span>{enemyNames[enemy] || enemy}</span>
-                    <span className="text-red-400 font-bold">{count}</span>
-                  </div>
-                ))
-            )}
-          </div>
+        <div className="p-3 rounded text-center" style={{ background: 'var(--bg-surface)' }}>
+          <p className="text-2xl font-bold" style={{ color: 'var(--text-dim)' }}>{stats.deaths}</p>
+          <p className="text-xs" style={{ color: 'var(--text-dim)' }}>Morts</p>
         </div>
       </div>
     </div>

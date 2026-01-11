@@ -35,56 +35,91 @@ export function EventScreen() {
   };
 
   return (
-    <div className="fixed inset-0 bg-zinc-950/95 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="w-full max-w-lg my-8">
-        {/* Header */}
-        <h2 className="text-center text-2xl font-bold text-amber-400 mb-4">
+    <div 
+      className="fixed inset-0 z-50 flex flex-col"
+      style={{ background: 'var(--bg-void)' }}
+    >
+      {/* Header */}
+      <div className="safe-top px-4 py-4 text-center">
+        <h2 
+          className="text-xl font-bold"
+          style={{ color: 'var(--copper)' }}
+        >
           {currentEvent.title}
         </h2>
-        
+      </div>
+      
+      {/* Contenu */}
+      <div className="flex-1 overflow-y-auto px-4 py-4">
         {/* Description */}
-        <div className="bg-zinc-900 rounded-xl p-6 mb-6 border border-zinc-800">
-          <p className="text-zinc-300 whitespace-pre-line leading-relaxed">
+        <div className="card-metal p-5 mb-4">
+          <p 
+            className="whitespace-pre-line leading-relaxed"
+            style={{ color: 'var(--text-primary)' }}
+          >
             {currentEvent.description}
           </p>
         </div>
         
-        {/* Résultat */}
+        {/* Resultat */}
         {result && (
-          <div className={`mb-6 p-4 rounded-xl border ${
-            result.success 
-              ? 'bg-emerald-950/50 border-emerald-800' 
-              : 'bg-red-950/50 border-red-800'
-          }`}>
-            <p className="text-zinc-200 whitespace-pre-line">
+          <div 
+            className="card-metal p-4 mb-4 animate-in"
+            style={{ 
+              borderColor: result.success ? 'var(--positive-light)' : 'var(--danger-light)',
+            }}
+          >
+            <p style={{ color: 'var(--text-primary)' }}>
               {result.message}
             </p>
           </div>
         )}
-        
-        {/* Choix */}
-        {!isResolving && (
-          <div className="space-y-3">
-            {currentEvent.choices.map(choice => (
-              <button
-                key={choice.id}
-                onClick={() => handleChoice(choice)}
-                className="w-full p-4 bg-zinc-800 hover:bg-zinc-700 rounded-xl transition-all hover:scale-[1.01] active:scale-[0.99] border border-zinc-700 text-left"
-              >
-                <div className="font-bold text-zinc-100">{choice.label}</div>
-                <div className="text-sm text-zinc-400 mt-1">{choice.description}</div>
-                
-                {/* Indicateur de risque si pas 100% */}
-                {choice.successChance !== undefined && choice.successChance < 1 && (
-                  <div className="text-xs text-yellow-500 mt-2">
-                    {Math.round(choice.successChance * 100)}% de succès
-                  </div>
-                )}
-              </button>
-            ))}
-          </div>
-        )}
       </div>
+      
+      {/* Zone du pouce - Choix */}
+      {!isResolving && (
+        <div 
+          className="p-4 space-y-3"
+          style={{ 
+            paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
+            background: 'linear-gradient(to top, var(--bg-dark) 80%, transparent)'
+          }}
+        >
+          {currentEvent.choices.map(choice => (
+            <button
+              key={choice.id}
+              onClick={() => handleChoice(choice)}
+              className="w-full p-4 rounded text-left transition-all active:scale-[0.98]"
+              style={{ 
+                background: 'var(--bg-surface)',
+                border: '1px solid var(--copper-dark)'
+              }}
+            >
+              <div 
+                className="font-bold"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                {choice.label}
+              </div>
+              <div 
+                className="text-sm mt-1"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                {choice.description}
+              </div>
+              
+              {choice.successChance !== undefined && choice.successChance < 1 && (
+                <div 
+                  className="text-xs mt-2"
+                  style={{ color: 'var(--copper)' }}
+                >
+                  {Math.round(choice.successChance * 100)}% de succes
+                </div>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

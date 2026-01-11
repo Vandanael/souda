@@ -12,13 +12,10 @@ export function WorldMap() {
   const adjacentTiles = getAdjacentTiles();
   const adjacentIds = new Set(adjacentTiles.map(t => t.id));
   
-  // Vérifier si Vigilant est équipé
   const hasVigilant = equippedSkills.some(skill => skill.id === 'skill_vigilant');
-  
-  // Tuile actuelle
   const currentTile = world.tiles.get(`${world.playerPosition.x},${world.playerPosition.y}`);
   
-  // Convertir la Map en tableau 2D pour l'affichage
+  // Convertir la Map en tableau 2D
   const grid: (typeof world.tiles extends Map<string, infer T> ? T : never)[][] = [];
   
   for (let y = 0; y < GRID_SIZE; y++) {
@@ -31,65 +28,82 @@ export function WorldMap() {
   }
 
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div className="flex flex-col items-center gap-3 w-full max-w-md">
       {/* Lieu actuel */}
-      <div className="text-center">
-        <h2 className="text-xl font-bold text-zinc-200">
-          {currentTile ? BIOME_NAMES[currentTile.type] : 'Les Terres Oubliées'}
+      <div className="text-center w-full">
+        <h2 
+          className="text-lg font-bold"
+          style={{ color: 'var(--text-primary)' }}
+        >
+          {currentTile ? BIOME_NAMES[currentTile.type] : 'Les Terres Oubliees'}
         </h2>
-        <p className="text-sm text-zinc-500">
-          Jour {world.time.day}, {world.time.hour}h
-        </p>
       </div>
       
       {/* Grille */}
       <div 
-        className="grid gap-2 p-4 bg-zinc-800/50 rounded-xl border border-zinc-700"
-        style={{ 
-          gridTemplateColumns: `repeat(${GRID_SIZE}, minmax(0, 1fr))`,
-          width: 'min(90vw, 400px)',
-        }}
+        className="card-metal p-3 w-full"
+        style={{ aspectRatio: '1/1', maxWidth: '100%' }}
       >
-        {grid.map((row) =>
-          row.map((tile) => {
-            const isPlayerHere = 
-              tile.x === world.playerPosition.x && 
-              tile.y === world.playerPosition.y;
-            
-            const isClickable = 
-              !isPlayerHere && 
-              (adjacentIds.has(tile.id) || 
-               (tile.isRevealed && areAdjacent(world.playerPosition, { x: tile.x, y: tile.y })));
-            
-            return (
-              <Tile
-                key={tile.id}
-                tile={tile}
-                isPlayerHere={isPlayerHere}
-                isClickable={isClickable}
-                hasVigilant={hasVigilant}
-                onClick={() => {
-                  sounds.move();
-                  moveTo(tile.x, tile.y);
-                }}
-              />
-            );
-          })
-        )}
+        <div 
+          className="grid gap-1.5 h-full"
+          style={{ 
+            gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)`,
+            gridTemplateRows: `repeat(${GRID_SIZE}, 1fr)`,
+          }}
+        >
+          {grid.map((row) =>
+            row.map((tile) => {
+              const isPlayerHere = 
+                tile.x === world.playerPosition.x && 
+                tile.y === world.playerPosition.y;
+              
+              const isClickable = 
+                !isPlayerHere && 
+                (adjacentIds.has(tile.id) || 
+                 (tile.isRevealed && areAdjacent(world.playerPosition, { x: tile.x, y: tile.y })));
+              
+              return (
+                <Tile
+                  key={tile.id}
+                  tile={tile}
+                  isPlayerHere={isPlayerHere}
+                  isClickable={isClickable}
+                  hasVigilant={hasVigilant}
+                  onClick={() => {
+                    sounds.move();
+                    moveTo(tile.x, tile.y);
+                  }}
+                />
+              );
+            })
+          )}
+        </div>
       </div>
       
-      {/* Légende minimaliste */}
-      <div className="flex flex-wrap justify-center gap-4 text-xs text-zinc-500">
-        <div className="flex items-center gap-1">
-          <div className="w-2 h-2 bg-amber-400 rounded-full" />
+      {/* Legende minimaliste */}
+      <div 
+        className="flex justify-center gap-6 text-xs"
+        style={{ color: 'var(--text-dim)' }}
+      >
+        <div className="flex items-center gap-1.5">
+          <div 
+            className="w-2 h-2 rounded-full" 
+            style={{ background: 'var(--copper)' }} 
+          />
           <span>Loot</span>
         </div>
-        <div className="flex items-center gap-1">
-          <div className="w-2 h-2 bg-red-500 rounded-full" />
+        <div className="flex items-center gap-1.5">
+          <div 
+            className="w-2 h-2 rounded-full" 
+            style={{ background: 'var(--danger-light)' }} 
+          />
           <span>Danger</span>
         </div>
-        <div className="flex items-center gap-1">
-          <div className="w-4 h-4 bg-yellow-400 rounded-full" />
+        <div className="flex items-center gap-1.5">
+          <div 
+            className="w-3 h-3 rounded-full" 
+            style={{ background: 'var(--copper-light)' }} 
+          />
           <span>Toi</span>
         </div>
       </div>

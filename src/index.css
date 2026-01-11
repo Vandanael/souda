@@ -1,77 +1,258 @@
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Custom styles */
+/* ============================================
+   SOUDA - Grimdark/Minimaliste Theme
+   ============================================ */
+
 @layer base {
+  :root {
+    /* Fonds */
+    --bg-void: #0a0a0a;
+    --bg-dark: #121212;
+    --bg-surface: #1a1a1a;
+    --bg-elevated: #242424;
+    
+    /* Textes */
+    --text-primary: #d1d1d1;
+    --text-muted: #7a7a7a;
+    --text-dim: #4a4a4a;
+    
+    /* Cuivre - Accent (cliquable/loot) */
+    --copper: #a67c52;
+    --copper-light: #c9a66b;
+    --copper-dark: #8b6642;
+    
+    /* Danger */
+    --danger: #630000;
+    --danger-light: #8b0000;
+    
+    /* Positif (HP) */
+    --positive: #3d5a3d;
+    --positive-light: #4a7a4a;
+    
+    /* Stats */
+    --stat-atk: #8b4a4a;
+    --stat-def: #4a5a7a;
+  }
+
   html {
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'Crimson Text', Georgia, 'Times New Roman', serif;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
   
   body {
-    @apply bg-zinc-900 text-white antialiased;
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+    min-height: 100vh;
+    min-height: 100dvh;
+    overscroll-behavior: none;
+  }
+
+  /* Selection */
+  ::selection {
+    background: var(--copper);
+    color: var(--bg-dark);
   }
   
-  /* Scrollbar styling */
+  /* Scrollbar */
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 4px;
+    height: 4px;
   }
   
   ::-webkit-scrollbar-track {
-    @apply bg-zinc-800 rounded;
+    background: var(--bg-surface);
   }
   
   ::-webkit-scrollbar-thumb {
-    @apply bg-zinc-600 rounded;
-  }
-  
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-zinc-500;
+    background: var(--text-dim);
+    border-radius: 2px;
   }
 }
 
-@layer utilities {
-  /* Fade in with scale */
-  .animate-in {
-    animation: animate-in 0.3s ease-out;
+/* ============================================
+   COMPOSANTS - Boutons
+   ============================================ */
+
+@layer components {
+  /* Bouton Cuivre (action principale) */
+  .btn-copper {
+    @apply font-semibold tracking-wide;
+    background: linear-gradient(180deg, var(--copper), var(--copper-dark));
+    border: 1px solid var(--copper-light);
+    color: var(--bg-dark);
+    padding: 14px 24px;
+    min-height: 48px;
+    border-radius: 4px;
+    transition: transform 0.1s, box-shadow 0.1s, opacity 0.1s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.4);
   }
   
-  /* Fade in only */
+  .btn-copper:active:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+  }
+  
+  .btn-copper:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* Bouton Danger */
+  .btn-danger {
+    @apply font-semibold tracking-wide;
+    background: linear-gradient(180deg, var(--danger-light), var(--danger));
+    border: 1px solid #a00;
+    color: var(--text-primary);
+    padding: 14px 24px;
+    min-height: 48px;
+    border-radius: 4px;
+    transition: transform 0.1s, box-shadow 0.1s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+  }
+  
+  .btn-danger:active:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+  }
+
+  /* Bouton Neutre */
+  .btn-neutral {
+    @apply font-semibold tracking-wide;
+    background: linear-gradient(180deg, var(--bg-elevated), var(--bg-surface));
+    border: 1px solid #3a3a3a;
+    color: var(--text-primary);
+    padding: 14px 24px;
+    min-height: 48px;
+    border-radius: 4px;
+    transition: transform 0.1s, box-shadow 0.1s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  }
+  
+  .btn-neutral:active:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.4);
+  }
+
+  /* Card Metal (conteneurs) */
+  .card-metal {
+    background: linear-gradient(180deg, var(--bg-surface), var(--bg-dark));
+    border: 1px solid #2a2a2a;
+    border-radius: 4px;
+    box-shadow: 
+      inset 0 1px 0 rgba(255,255,255,0.02),
+      0 2px 8px rgba(0,0,0,0.4);
+  }
+
+  /* Card Loot (bordure cuivre) */
+  .card-loot {
+    background: linear-gradient(180deg, var(--bg-surface), var(--bg-dark));
+    border: 1px solid var(--copper);
+    border-radius: 4px;
+    box-shadow: 0 0 12px rgba(166, 124, 82, 0.15);
+  }
+
+  /* Tile clickable */
+  .tile-clickable {
+    border: 2px solid var(--copper) !important;
+    cursor: pointer;
+    transition: transform 0.1s, border-color 0.2s;
+  }
+  
+  .tile-clickable:active {
+    transform: scale(0.92);
+  }
+
+  /* Texte Cuivre (liens, importance) */
+  .text-copper {
+    color: var(--copper);
+  }
+  
+  .text-copper-light {
+    color: var(--copper-light);
+  }
+
+  /* Badge */
+  .badge {
+    @apply px-2 py-0.5 text-xs font-semibold uppercase tracking-wider rounded;
+    background: var(--bg-elevated);
+    border: 1px solid #3a3a3a;
+    color: var(--text-muted);
+  }
+  
+  .badge-copper {
+    background: var(--copper-dark);
+    border-color: var(--copper);
+    color: var(--text-primary);
+  }
+}
+
+/* ============================================
+   LAYOUT MOBILE
+   ============================================ */
+
+@layer utilities {
+  /* Zone du pouce (bas de l'ecran) */
+  .thumb-zone {
+    @apply fixed bottom-0 left-0 right-0;
+    padding: 12px 16px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    background: linear-gradient(to top, var(--bg-dark) 80%, transparent);
+  }
+
+  /* Safe area top */
+  .safe-top {
+    padding-top: max(12px, env(safe-area-inset-top));
+  }
+
+  /* Full viewport height mobile */
+  .h-screen-safe {
+    height: 100vh;
+    height: 100dvh;
+  }
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@layer utilities {
+  .animate-in {
+    animation: animate-in 0.25s ease-out;
+  }
+  
   .fade-in {
     animation: fade-in 0.2s ease-out;
   }
   
-  /* Slide up */
   .slide-up {
     animation: slide-up 0.3s ease-out;
   }
   
-  /* Slide down */
-  .slide-down {
-    animation: slide-down 0.3s ease-out;
-  }
-  
-  /* Pop in */
   .pop-in {
     animation: pop-in 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
   
-  /* Shake */
   .shake {
     animation: shake 0.4s ease-in-out;
   }
   
-  /* Glow pulse */
-  .glow-pulse {
-    animation: glow-pulse 2s ease-in-out infinite;
+  .pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
   }
 }
 
 @keyframes animate-in {
   from {
     opacity: 0;
-    transform: scale(0.95);
+    transform: scale(0.96);
   }
   to {
     opacity: 1;
@@ -80,29 +261,14 @@
 }
 
 @keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes slide-up {
   from {
     opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slide-down {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
+    transform: translateY(16px);
   }
   to {
     opacity: 1;
@@ -113,7 +279,7 @@
 @keyframes pop-in {
   from {
     opacity: 0;
-    transform: scale(0.8);
+    transform: scale(0.85);
   }
   to {
     opacity: 1;
@@ -123,15 +289,53 @@
 
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
-  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
-  20%, 40%, 60%, 80% { transform: translateX(4px); }
+  20%, 60% { transform: translateX(-3px); }
+  40%, 80% { transform: translateX(3px); }
 }
 
-@keyframes glow-pulse {
+@keyframes pulse-glow {
   0%, 100% {
-    box-shadow: 0 0 5px rgba(251, 191, 36, 0.3);
+    box-shadow: 0 0 4px rgba(166, 124, 82, 0.3);
   }
   50% {
-    box-shadow: 0 0 20px rgba(251, 191, 36, 0.6);
+    box-shadow: 0 0 16px rgba(166, 124, 82, 0.5);
+  }
+}
+
+/* ============================================
+   OVERRIDES SPECIFIQUES
+   ============================================ */
+
+/* Titres */
+h1, h2, h3, h4 {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* Liens */
+a {
+  color: var(--copper);
+  text-decoration: none;
+}
+
+/* Inputs (pour le futur) */
+input, textarea, select {
+  background: var(--bg-surface);
+  border: 1px solid #3a3a3a;
+  color: var(--text-primary);
+  padding: 12px;
+  border-radius: 4px;
+  font-family: inherit;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--copper);
+}
+
+/* Empêcher le zoom sur iOS */
+@media screen and (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px;
   }
 }

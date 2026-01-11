@@ -9,64 +9,108 @@ export function GameOverScreen() {
   if (screen !== 'gameover') return null;
   
   return (
-    <div className="fixed inset-0 bg-zinc-950 flex items-center justify-center z-50 p-4">
-      <div className="w-full max-w-md text-center">
+    <div 
+      className="fixed inset-0 z-50 flex flex-col"
+      style={{ background: 'var(--bg-void)' }}
+    >
+      {/* Contenu centre */}
+      <div className="flex-1 flex flex-col items-center justify-center px-4">
         {/* Header */}
-        <h1 className="text-4xl font-bold text-red-500 mb-2">
+        <h1 
+          className="text-3xl font-bold mb-2"
+          style={{ color: 'var(--danger-light)' }}
+        >
           Fin de la Route
         </h1>
-        <p className="text-zinc-400 mb-8">
+        <p 
+          className="mb-8"
+          style={{ color: 'var(--text-muted)' }}
+        >
           Le monde continue sans toi.
         </p>
         
         {/* Stats */}
-        <div className="bg-zinc-900 rounded-xl p-6 mb-8 border border-zinc-800">
-          <h2 className="text-lg font-bold text-zinc-300 mb-4 uppercase tracking-wider">
+        <div className="card-metal p-5 w-full max-w-sm mb-8">
+          <h2 
+            className="text-sm font-bold uppercase tracking-wider text-center mb-4"
+            style={{ color: 'var(--text-muted)' }}
+          >
             Ton parcours
           </h2>
           
-          <div className="grid grid-cols-2 gap-4 text-left">
-            <div className="p-3 bg-zinc-800/50 rounded-lg">
-              <p className="text-2xl font-bold text-amber-400">{stats.tilesExplored}</p>
-              <p className="text-xs text-zinc-500">Zones explorées</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div 
+              className="p-3 rounded text-center"
+              style={{ background: 'var(--bg-surface)' }}
+            >
+              <p className="text-2xl font-bold" style={{ color: 'var(--copper)' }}>
+                {stats.tilesExplored}
+              </p>
+              <p className="text-xs" style={{ color: 'var(--text-dim)' }}>Zones</p>
             </div>
             
-            <div className="p-3 bg-zinc-800/50 rounded-lg">
-              <p className="text-2xl font-bold text-red-400">{stats.enemiesKilled}</p>
-              <p className="text-xs text-zinc-500">Ennemis vaincus</p>
+            <div 
+              className="p-3 rounded text-center"
+              style={{ background: 'var(--bg-surface)' }}
+            >
+              <p className="text-2xl font-bold" style={{ color: 'var(--stat-atk)' }}>
+                {stats.enemiesKilled}
+              </p>
+              <p className="text-xs" style={{ color: 'var(--text-dim)' }}>Ennemis</p>
             </div>
             
-            <div className="p-3 bg-zinc-800/50 rounded-lg">
-              <p className="text-2xl font-bold text-emerald-400">{stats.itemsCollected}</p>
-              <p className="text-xs text-zinc-500">Objets collectés</p>
+            <div 
+              className="p-3 rounded text-center"
+              style={{ background: 'var(--bg-surface)' }}
+            >
+              <p className="text-2xl font-bold" style={{ color: 'var(--positive-light)' }}>
+                {stats.itemsCollected}
+              </p>
+              <p className="text-xs" style={{ color: 'var(--text-dim)' }}>Objets</p>
             </div>
             
-            <div className="p-3 bg-zinc-800/50 rounded-lg">
-              <p className="text-2xl font-bold text-zinc-400">{world.time.day}</p>
-              <p className="text-xs text-zinc-500">Jours survécu</p>
+            <div 
+              className="p-3 rounded text-center"
+              style={{ background: 'var(--bg-surface)' }}
+            >
+              <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
+                {world.time.day}
+              </p>
+              <p className="text-xs" style={{ color: 'var(--text-dim)' }}>Jours</p>
             </div>
           </div>
           
           {stats.deaths > 0 && (
-            <p className="mt-4 text-sm text-zinc-500">
-              Tu es tombé {stats.deaths} fois.
+            <p 
+              className="mt-4 text-sm text-center"
+              style={{ color: 'var(--text-dim)' }}
+            >
+              Tu es tombe {stats.deaths} fois.
             </p>
           )}
         </div>
-        
-        {/* Actions */}
-        <div className="space-y-3">
-          <button
-            onClick={resetGame}
-            className="w-full p-4 bg-amber-600 hover:bg-amber-500 rounded-xl font-bold text-lg transition-all hover:scale-[1.02] active:scale-[0.98]"
-          >
-            Nouvelle Partie
-          </button>
-          
-          <p className="text-xs text-zinc-600">
-            Les Terres Oubliées attendent un nouveau voyageur.
-          </p>
-        </div>
+      </div>
+      
+      {/* Zone du pouce */}
+      <div 
+        className="p-4"
+        style={{ 
+          paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
+          background: 'linear-gradient(to top, var(--bg-dark) 90%, transparent)'
+        }}
+      >
+        <button
+          onClick={resetGame}
+          className="btn-copper w-full text-lg"
+        >
+          Nouvelle Partie
+        </button>
+        <p 
+          className="text-xs text-center mt-3"
+          style={{ color: 'var(--text-dim)' }}
+        >
+          Les Terres Oubliees attendent un nouveau voyageur.
+        </p>
       </div>
     </div>
   );

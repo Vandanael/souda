@@ -1,5 +1,4 @@
-import type { Tile as TileType } from '../../types';
-import { BIOME_COLORS, BIOME_HOVER_COLORS } from '../../data/map';
+import type { Tile as TileType, TileType as BiomeType } from '../../types';
 
 interface TileProps {
   tile: TileType;
@@ -9,71 +8,131 @@ interface TileProps {
   onClick: () => void;
 }
 
+// Couleurs des biomes - tons sombres
+const BIOME_BG: Record<BiomeType, string> = {
+  hub: '#4a3a2a',      // Brun chaud
+  plain: '#2a3a2a',    // Vert sombre
+  forest: '#1a2a1a',   // Vert tres sombre
+  hills: '#3a3a3a',    // Gris
+  ruins: '#2a2a2a',    // Gris fonce
+  village: '#3a2a1a',  // Brun
+};
+
 export function Tile({ tile, isPlayerHere, isClickable, hasVigilant, onClick }: TileProps) {
-  // Tuile non révélée = Brouillard
+  // Tuile non revelee = Brouillard
   if (!tile.isRevealed) {
-    // Si Vigilant équipé et tuile clickable, montrer le danger
     const showDangerHint = hasVigilant && isClickable && tile.hasDanger;
     
     return (
       <button
         className={`
-          aspect-square rounded-lg
+          w-full h-full rounded
           flex items-center justify-center
-          transition-all duration-300 ease-out
-          ${showDangerHint
-            ? 'bg-red-900/50 cursor-pointer hover:bg-red-800/50 hover:scale-105 border-2 border-dashed border-red-500 hover:border-red-400'
-            : isClickable 
-              ? 'bg-zinc-700 cursor-pointer hover:bg-zinc-600 hover:scale-105 border-2 border-dashed border-zinc-500 hover:border-amber-500' 
-              : 'bg-zinc-900 cursor-default'}
+          transition-all duration-200
+          ${isClickable ? 'tile-clickable' : ''}
         `}
+        style={{
+          background: showDangerHint 
+            ? 'var(--danger)' 
+            : isClickable 
+              ? 'var(--bg-elevated)' 
+              : 'var(--bg-void)',
+          border: showDangerHint
+            ? '2px dashed var(--danger-light)'
+            : isClickable 
+              ? undefined // handled by .tile-clickable
+              : '1px solid #1a1a1a',
+          minWidth: '44px',
+          minHeight: '44px',
+        }}
         onClick={isClickable ? onClick : undefined}
         disabled={!isClickable}
-        aria-label={showDangerHint ? 'Zone dangereuse détectée' : isClickable ? 'Explorer cette zone' : 'Zone inaccessible'}
+        aria-label={
+          showDangerHint 
+            ? 'Zone dangereuse detectee' 
+            : isClickable 
+              ? 'Explorer cette zone' 
+              : 'Zone inaccessible'
+        }
       >
         {showDangerHint ? (
-          <span className="text-red-400 text-2xl font-bold">!</span>
+          <span 
+            className="text-xl font-bold"
+            style={{ color: 'var(--danger-light)' }}
+          >
+            !
+          </span>
         ) : isClickable && (
-          <span className="text-zinc-400 text-2xl font-bold">?</span>
+          <span 
+            className="text-lg font-bold"
+            style={{ color: 'var(--copper)' }}
+          >
+            ?
+          </span>
         )}
       </button>
     );
   }
 
-  // Tuile révélée
+  // Tuile revelee
   return (
     <button
       className={`
-        aspect-square rounded-lg
-        flex flex-col items-center justify-center gap-1
-        transition-all duration-300 ease-out
-        ${BIOME_COLORS[tile.type]}
-        ${isClickable ? `${BIOME_HOVER_COLORS[tile.type]} cursor-pointer hover:scale-105` : 'cursor-default'}
-        ${isPlayerHere ? 'ring-4 ring-yellow-400 ring-offset-2 ring-offset-zinc-900 scale-110' : ''}
-        ${isClickable && !isPlayerHere ? 'ring-2 ring-white/30 hover:ring-white/60' : ''}
+        w-full h-full rounded
+        flex flex-col items-center justify-center
+        transition-all duration-200
         relative overflow-hidden
+        ${isClickable ? 'tile-clickable' : ''}
       `}
+      style={{
+        background: BIOME_BG[tile.type],
+        border: isPlayerHere 
+          ? '3px solid var(--copper-light)' 
+          : '1px solid #2a2a2a',
+        boxShadow: isPlayerHere 
+          ? '0 0 12px rgba(166, 124, 82, 0.4), inset 0 0 8px rgba(166, 124, 82, 0.2)'
+          : 'none',
+        minWidth: '44px',
+        minHeight: '44px',
+      }}
       onClick={isClickable ? onClick : undefined}
       disabled={!isClickable}
     >
       {/* Marqueur du joueur */}
       {isPlayerHere && (
-        <div className="w-4 h-4 bg-yellow-400 rounded-full shadow-lg shadow-yellow-400/50" />
+        <div 
+          className="w-3 h-3 rounded-full"
+          style={{ 
+            background: 'var(--copper-light)',
+            boxShadow: '0 0 8px var(--copper)'
+          }}
+        />
       )}
       
-      {/* Indicateur de loot - petit point doré */}
+      {/* Indicateur de loot */}
       {tile.loot && !isPlayerHere && (
-        <div className="absolute top-1.5 right-1.5 w-2 h-2 bg-amber-400 rounded-full animate-pulse" />
+        <div 
+          className="absolute top-1 right-1 w-2 h-2 rounded-full pulse-glow"
+          style={{ background: 'var(--copper)' }}
+        />
       )}
       
-      {/* Indicateur de danger - petit point rouge */}
+      {/* Indicateur de danger */}
       {tile.hasDanger && !isPlayerHere && (
-        <div className="absolute bottom-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
+        <div 
+          className="absolute bottom-1 right-1 w-2 h-2 rounded-full"
+          style={{ background: 'var(--danger-light)' }}
+        />
       )}
       
-      {/* Indicateur exploré - checkmark discret */}
+      {/* Indicateur explore */}
       {tile.isExplored && !isPlayerHere && !tile.loot && !tile.hasDanger && (
-        <div className="absolute bottom-1 left-1 text-[10px] text-white/30">✓</div>
+        <div 
+          className="absolute bottom-0.5 left-0.5 text-[8px]"
+          style={{ color: 'var(--text-dim)', opacity: 0.5 }}
+        >
+          ok
+        </div>
       )}
     </button>
   );

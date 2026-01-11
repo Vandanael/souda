@@ -8,23 +8,7 @@ const TYPE_LABELS: Record<LootType, string> = {
   armor: 'Armure',
   consumable: 'Conso.',
   skill: 'Skill',
-  treasure: 'Trésor',
-};
-
-const TYPE_COLORS: Record<LootType, string> = {
-  weapon: 'text-red-400',
-  armor: 'text-blue-400',
-  consumable: 'text-green-400',
-  skill: 'text-purple-400',
-  treasure: 'text-amber-400',
-};
-
-const TYPE_BG: Record<LootType, string> = {
-  weapon: 'from-red-950 to-zinc-900 border-red-700',
-  armor: 'from-blue-950 to-zinc-900 border-blue-700',
-  consumable: 'from-green-950 to-zinc-900 border-green-700',
-  skill: 'from-purple-950 to-zinc-900 border-purple-700',
-  treasure: 'from-amber-950 to-zinc-900 border-amber-700',
+  treasure: 'Tresor',
 };
 
 export function Backpack() {
@@ -35,33 +19,26 @@ export function Backpack() {
   const equipItem = useGameStore(state => state.equipItem);
   const screen = useGameStore(state => state.screen);
   
-  const [confirmDrop, setConfirmDrop] = useState<number | null>(null);
-  const [feedback, setFeedback] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<{ item: LootCard; index: number } | null>(null);
+  const [confirmDrop, setConfirmDrop] = useState(false);
+  const [feedback, setFeedback] = useState<string | null>(null);
   
   const currentWeight = getCurrentWeight();
-  const weightPercent = (currentWeight / inventory.maxWeight) * 100;
   
-  const getWeightColor = () => {
-    if (weightPercent > 90) return 'bg-red-500';
-    if (weightPercent > 70) return 'bg-yellow-500';
-    return 'bg-emerald-500';
-  };
-  
-  const handleDrop = (index: number) => {
-    if (confirmDrop === index) {
+  const handleDrop = () => {
+    if (selectedItem && confirmDrop) {
       sounds.lootDrop();
-      dropItem(index);
-      setConfirmDrop(null);
+      dropItem(selectedItem.index);
       setSelectedItem(null);
+      setConfirmDrop(false);
     } else {
-      sounds.click();
-      setConfirmDrop(index);
+      setConfirmDrop(true);
     }
   };
   
-  const handleUse = (index: number) => {
-    const result = useItem(index);
+  const handleUse = () => {
+    if (!selectedItem) return;
+    const result = useItem(selectedItem.index);
     if (result.success) {
       sounds.heal();
       setFeedback(result.message);
@@ -70,11 +47,12 @@ export function Backpack() {
     }
   };
   
-  const handleEquip = (item: LootCard) => {
+  const handleEquip = () => {
+    if (!selectedItem) return;
     sounds.lootTake();
-    equipItem(item);
+    equipItem(selectedItem.item);
+    setFeedback(`${selectedItem.item.name} equipe !`);
     setSelectedItem(null);
-    setFeedback(`${item.name} équipé !`);
     setTimeout(() => setFeedback(null), 2000);
   };
   
@@ -83,121 +61,112 @@ export function Backpack() {
   };
 
   return (
-    <div className="w-full max-w-xs bg-zinc-800/80 backdrop-blur rounded-xl p-4 border border-zinc-700">
-      <h3 className="text-lg font-bold mb-3">Inventaire</h3>
-      
-      {/* Feedback */}
+    <div className="w-full">
+      {/* Feedback message */}
       {feedback && (
-        <div className="mb-3 p-2 bg-emerald-900/50 border border-emerald-700 rounded text-sm text-emerald-300 text-center animate-in fade-in">
+        <div 
+          className="mb-2 p-2 text-center text-sm animate-in fade-in rounded"
+          style={{ 
+            background: 'var(--positive)', 
+            color: 'var(--text-primary)',
+            border: '1px solid var(--positive-light)'
+          }}
+        >
           {feedback}
         </div>
       )}
       
-      {/* Jauge de poids */}
-      <div className="mb-4">
-        <div className="flex justify-between text-sm text-zinc-400 mb-1">
-          <span>Poids</span>
-          <span className={weightPercent > 90 ? 'text-red-400 font-bold' : ''}>
-            {currentWeight.toFixed(1)} / {inventory.maxWeight}kg
+      {/* Header compact avec equipement */}
+      <div className="card-metal p-2 mb-2">
+        <div className="flex items-center justify-between text-xs">
+          <div className="flex items-center gap-3">
+            {inventory.equipped.weapon && (
+              <span style={{ color: 'var(--stat-atk)' }}>
+                {inventory.equipped.weapon.name}
+              </span>
+            )}
+            {inventory.equipped.armor && (
+              <span style={{ color: 'var(--stat-def)' }}>
+                {inventory.equipped.armor.name}
+              </span>
+            )}
+          </div>
+          <span style={{ color: 'var(--text-muted)' }}>
+            {currentWeight.toFixed(1)}/{inventory.maxWeight}kg
           </span>
         </div>
-        <div className="h-2 bg-zinc-700 rounded-full overflow-hidden">
-          <div 
-            className={`h-full transition-all duration-300 ${getWeightColor()}`}
-            style={{ width: `${Math.min(100, weightPercent)}%` }}
-          />
-        </div>
-        {weightPercent > 100 && (
-          <p className="text-red-400 text-xs mt-1 animate-pulse">
-            Surchargé ! Impossible de bouger.
-          </p>
-        )}
       </div>
       
-      {/* Équipement */}
-      <div className="mb-4 p-3 bg-zinc-900/50 rounded-lg">
-        <p className="text-xs text-zinc-500 uppercase tracking-wider mb-2">Équipé</p>
-        <div className="space-y-2 text-sm">
-          <div className="flex items-center gap-2">
-            <span className="text-red-400 text-xs w-8">ATK</span>
-            <span className="flex-1 truncate">
-              {inventory.equipped.weapon?.name || '—'}
-            </span>
-            {inventory.equipped.weapon && (
-              <span className="text-red-400 text-xs">
-                +{inventory.equipped.weapon.stats.atk}
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-blue-400 text-xs w-8">DEF</span>
-            <span className="flex-1 truncate">
-              {inventory.equipped.armor?.name || '—'}
-            </span>
-            {inventory.equipped.armor && (
-              <span className="text-blue-400 text-xs">
-                +{inventory.equipped.armor.stats.def}
-              </span>
-            )}
-          </div>
-          {inventory.equipped.skills.length > 0 && (
-            <div className="flex items-center gap-2">
-              <span className="text-purple-400 text-xs w-8">SKL</span>
-              <span className="flex-1 truncate text-purple-300">
-                {inventory.equipped.skills.map(s => s.name).join(', ')}
-              </span>
-            </div>
-          )}
-        </div>
-      </div>
-      
-      {/* Liste des items */}
-      <div className="space-y-1 max-h-64 overflow-y-auto">
+      {/* Liste horizontale scrollable */}
+      <div 
+        className="flex gap-2 overflow-x-auto pb-2"
+        style={{ 
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+        }}
+      >
         {inventory.bag.length === 0 ? (
-          <p className="text-zinc-500 italic text-center py-4 text-sm">
+          <div 
+            className="flex-1 text-center py-3 text-sm italic"
+            style={{ color: 'var(--text-dim)' }}
+          >
             Sac vide
-          </p>
+          </div>
         ) : (
           inventory.bag.map((item, index) => (
-            <button 
+            <button
               key={`${item.id}-${index}`}
               onClick={() => setSelectedItem({ item, index })}
-              className="w-full flex items-center gap-2 p-2 bg-zinc-700/50 rounded hover:bg-zinc-700 transition-colors text-left"
+              className="flex-shrink-0 card-loot p-2 min-w-[80px] text-center transition-transform active:scale-95"
             >
-              <span className={`text-xs font-medium w-12 ${TYPE_COLORS[item.type]}`}>
+              <p 
+                className="text-[10px] uppercase font-semibold mb-1"
+                style={{ color: 'var(--copper)' }}
+              >
                 {TYPE_LABELS[item.type]}
-              </span>
-              <div className="flex-1 min-w-0">
-                <p className="truncate text-sm">{item.name}</p>
-              </div>
-              <span className="text-zinc-500 text-xs">{item.weight}kg</span>
+              </p>
+              <p 
+                className="text-xs truncate font-medium"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                {item.name}
+              </p>
+              <p 
+                className="text-[10px] mt-1"
+                style={{ color: 'var(--text-dim)' }}
+              >
+                {item.weight}kg
+              </p>
             </button>
           ))
         )}
       </div>
       
       {/* Compteur */}
-      <div className="mt-3 pt-3 border-t border-zinc-700 text-xs text-zinc-500 text-center">
-        {inventory.bag.length} objet{inventory.bag.length > 1 ? 's' : ''} — Clique pour détails
+      <div 
+        className="text-center text-xs mt-1"
+        style={{ color: 'var(--text-dim)' }}
+      >
+        {inventory.bag.length} objet{inventory.bag.length !== 1 ? 's' : ''}
       </div>
       
-      {/* Modal détail item */}
+      {/* Modal detail item */}
       {selectedItem && screen !== 'combat' && (
         <ItemDetailModal
           item={selectedItem.item}
-          onClose={() => { setSelectedItem(null); setConfirmDrop(null); }}
-          onUse={() => handleUse(selectedItem.index)}
-          onEquip={() => handleEquip(selectedItem.item)}
-          onDrop={() => handleDrop(selectedItem.index)}
+          onClose={() => { setSelectedItem(null); setConfirmDrop(false); }}
+          onUse={handleUse}
+          onEquip={handleEquip}
+          onDrop={handleDrop}
           canEquip={canEquip(selectedItem.item)}
-          confirmDrop={confirmDrop === selectedItem.index}
+          confirmDrop={confirmDrop}
         />
       )}
     </div>
   );
 }
 
-// === MODAL DÉTAIL ITEM ===
+// === MODAL DETAIL ITEM ===
 
 function ItemDetailModal({ 
   item, 
@@ -217,79 +186,108 @@ function ItemDetailModal({
   confirmDrop: boolean;
 }) {
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={onClose}>
+    <div 
+      className="fixed inset-0 z-50 flex flex-col animate-in fade-in"
+      style={{ background: 'rgba(10, 10, 10, 0.95)' }}
+      onClick={onClose}
+    >
+      {/* Contenu centre */}
       <div 
-        className={`w-full max-w-sm p-5 rounded-xl border-2 bg-gradient-to-b ${TYPE_BG[item.type]} shadow-2xl`}
+        className="flex-1 flex flex-col items-center justify-center p-6"
         onClick={e => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex justify-between items-start mb-3">
-          <span className={`px-2 py-0.5 rounded text-xs uppercase ${TYPE_COLORS[item.type]} bg-black/30`}>
-            {TYPE_LABELS[item.type]}
-          </span>
-          <span className="text-zinc-400 text-xs">{item.weight}kg</span>
+        {/* Badge */}
+        <div className="badge-copper mb-4">
+          {TYPE_LABELS[item.type]}
         </div>
         
         {/* Nom */}
-        <h3 className="text-xl font-bold mb-2">{item.name}</h3>
+        <h3 
+          className="text-2xl font-bold mb-1"
+          style={{ color: 'var(--copper-light)' }}
+        >
+          {item.name}
+        </h3>
+        
+        {/* Poids */}
+        <p 
+          className="text-sm mb-4"
+          style={{ color: 'var(--text-muted)' }}
+        >
+          {item.weight}kg
+        </p>
         
         {/* Stats */}
         {(item.stats.atk || item.stats.def || item.stats.heal || item.stats.hungerRestore) && (
-          <div className="flex flex-wrap gap-3 mb-3 text-sm">
+          <div className="flex flex-wrap justify-center gap-3 mb-4">
             {item.stats.atk && (
-              <span className="text-red-400 font-bold">ATK +{item.stats.atk}</span>
+              <span className="font-bold" style={{ color: 'var(--stat-atk)' }}>
+                ATK +{item.stats.atk}
+              </span>
             )}
             {item.stats.def && (
-              <span className="text-blue-400 font-bold">DEF +{item.stats.def}</span>
+              <span className="font-bold" style={{ color: 'var(--stat-def)' }}>
+                DEF +{item.stats.def}
+              </span>
             )}
             {item.stats.heal && (
-              <span className="text-green-400 font-bold">+{item.stats.heal} HP</span>
+              <span className="font-bold" style={{ color: 'var(--positive-light)' }}>
+                +{item.stats.heal} HP
+              </span>
             )}
             {item.stats.hungerRestore && (
-              <span className="text-yellow-400 font-bold">+{item.stats.hungerRestore}j faim</span>
+              <span className="font-bold" style={{ color: 'var(--copper)' }}>
+                +{item.stats.hungerRestore}j faim
+              </span>
             )}
           </div>
         )}
         
         {/* Description */}
-        <p className="text-zinc-300 text-sm italic mb-4">
+        <p 
+          className="text-center italic text-sm max-w-sm"
+          style={{ color: 'var(--text-muted)' }}
+        >
           {item.description}
         </p>
         
         {/* Valeur */}
         {item.value && (
-          <p className="text-xs text-zinc-500 mb-4">
-            Valeur : {item.value} pièces
+          <p 
+            className="text-xs mt-4"
+            style={{ color: 'var(--text-dim)' }}
+          >
+            Valeur : {item.value} pieces
           </p>
         )}
-        
-        {/* Actions */}
-        <div className="flex gap-2">
+      </div>
+      
+      {/* Zone du pouce - Actions */}
+      <div 
+        className="p-4 space-y-3"
+        style={{ 
+          paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
+          background: 'linear-gradient(to top, var(--bg-dark) 80%, transparent)'
+        }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Actions principales */}
+        <div className="flex gap-3">
           {item.type === 'consumable' && (
-            <button
-              onClick={onUse}
-              className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-bold transition-colors"
-            >
+            <button onClick={onUse} className="btn-copper flex-1">
               Utiliser
             </button>
           )}
           
           {canEquip && (
-            <button
-              onClick={onEquip}
-              className="flex-1 py-2.5 bg-amber-600 hover:bg-amber-500 rounded-lg font-bold transition-colors"
-            >
-              Équiper
+            <button onClick={onEquip} className="btn-copper flex-1">
+              Equiper
             </button>
           )}
           
           <button
             onClick={onDrop}
-            className={`py-2.5 px-4 rounded-lg font-bold transition-colors ${
-              confirmDrop 
-                ? 'bg-red-600 hover:bg-red-500' 
-                : 'bg-zinc-700 hover:bg-zinc-600'
-            }`}
+            className={confirmDrop ? 'btn-danger flex-1' : 'btn-neutral flex-1'}
           >
             {confirmDrop ? 'Confirmer' : 'Jeter'}
           </button>
@@ -298,7 +296,8 @@ function ItemDetailModal({
         {/* Fermer */}
         <button
           onClick={onClose}
-          className="w-full mt-3 py-2 text-zinc-400 hover:text-zinc-300 text-sm transition-colors"
+          className="w-full py-3 text-center"
+          style={{ color: 'var(--text-muted)' }}
         >
           Fermer
         </button>

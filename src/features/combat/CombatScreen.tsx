@@ -25,29 +25,20 @@ export function CombatScreen() {
   const playerAtk = getPlayerAtk();
   const playerDef = getPlayerDef();
   
-  // Estimation du combat
+  // Estimation
   const damageToEnemy = Math.max(1, playerAtk - enemy.def);
   const damageToPlayer = Math.max(1, enemy.atk - playerDef);
   const turnsToKill = Math.ceil(enemyHp / damageToEnemy);
   const estimatedDamage = turnsToKill * damageToPlayer;
+  const isDangerous = estimatedDamage > player.hp;
   
-  // Chances de succès RP selon l'ennemi
+  // Chances RP
   const getRpChance = () => {
-    switch (enemy.id) {
-      case 'wolf':
-      case 'wolf_pack_alpha':
-        return 0;
-      case 'bandit':
-        return 0.4;
-      case 'mercenary':
-        return 0.3;
-      case 'deserter':
-        return 0.5;
-      case 'patrol_chief':
-        return 0.1;
-      default:
-        return 0.2;
-    }
+    const chances: Record<string, number> = {
+      wolf: 0, wolf_pack_alpha: 0,
+      bandit: 0.4, mercenary: 0.3, deserter: 0.5, patrol_chief: 0.1,
+    };
+    return chances[enemy.id] ?? 0.2;
   };
   
   const rpChance = getRpChance();
@@ -63,7 +54,7 @@ export function CombatScreen() {
       setResult(`Victoire ! ${enemy.name} est vaincu.`);
     } else if (res.died) {
       sounds.defeat();
-      setResult('Tu es tombé au combat...');
+      setResult('Tu es tombe au combat...');
     }
     
     setTimeout(() => {
@@ -81,7 +72,7 @@ export function CombatScreen() {
       setResult('Tu fuis le combat !');
     } else {
       sounds.error();
-      setResult(`Fuite échouée ! -${res.damageTaken} HP`);
+      setResult(`Fuite echouee ! -${res.damageTaken} HP`);
     }
     
     setTimeout(() => {
@@ -93,9 +84,7 @@ export function CombatScreen() {
   const handleTalk = () => {
     setIsResolving(true);
     const res = tryTalk();
-    
     setResult(res.message);
-    
     setTimeout(() => {
       setResult(null);
       setIsResolving(false);
@@ -103,105 +92,185 @@ export function CombatScreen() {
   };
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-b from-red-950/95 to-zinc-900 flex items-center justify-center z-50 p-4">
-      <div className="w-full max-w-lg">
-        {/* Header */}
-        <h2 className="text-center text-2xl font-bold text-red-500 mb-4 tracking-wide">
-          RENCONTRE
+    <div 
+      className="fixed inset-0 z-50 flex flex-col"
+      style={{ background: 'linear-gradient(180deg, var(--danger) 0%, var(--bg-dark) 100%)' }}
+    >
+      {/* Header */}
+      <div className="safe-top px-4 py-3 text-center">
+        <h2 
+          className="text-xl font-bold tracking-wider uppercase"
+          style={{ color: 'var(--danger-light)' }}
+        >
+          Rencontre
         </h2>
-        
+      </div>
+      
+      {/* Contenu central */}
+      <div className="flex-1 flex flex-col items-center justify-center px-4 overflow-y-auto">
         {/* Ennemi */}
-        <div className="text-center bg-zinc-800/70 rounded-xl p-6 mb-6 border border-zinc-700">
-          <h3 className="text-2xl font-bold mb-2">{enemy.name}</h3>
-          <p className="text-zinc-400 italic mb-4 text-sm">{enemy.description}</p>
+        <div className="card-metal p-5 w-full max-w-md text-center mb-4">
+          <h3 
+            className="text-2xl font-bold mb-2"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            {enemy.name}
+          </h3>
+          <p 
+            className="italic text-sm mb-4"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            {enemy.description}
+          </p>
           
           {/* Stats ennemi */}
           <div className="flex justify-center gap-6">
             <div className="text-center">
-              <p className="text-xs text-zinc-500 uppercase">HP</p>
-              <p className="text-red-400 font-bold">{enemyHp}/{enemy.hp}</p>
+              <p 
+                className="text-xs uppercase mb-0.5"
+                style={{ color: 'var(--text-dim)' }}
+              >
+                HP
+              </p>
+              <p 
+                className="font-bold"
+                style={{ color: 'var(--danger-light)' }}
+              >
+                {enemyHp}/{enemy.hp}
+              </p>
             </div>
             <div className="text-center">
-              <p className="text-xs text-zinc-500 uppercase">ATK</p>
-              <p className="text-orange-400 font-bold">{enemy.atk}</p>
+              <p 
+                className="text-xs uppercase mb-0.5"
+                style={{ color: 'var(--text-dim)' }}
+              >
+                ATK
+              </p>
+              <p 
+                className="font-bold"
+                style={{ color: 'var(--stat-atk)' }}
+              >
+                {enemy.atk}
+              </p>
             </div>
             <div className="text-center">
-              <p className="text-xs text-zinc-500 uppercase">DEF</p>
-              <p className="text-blue-400 font-bold">{enemy.def}</p>
+              <p 
+                className="text-xs uppercase mb-0.5"
+                style={{ color: 'var(--text-dim)' }}
+              >
+                DEF
+              </p>
+              <p 
+                className="font-bold"
+                style={{ color: 'var(--stat-def)' }}
+              >
+                {enemy.def}
+              </p>
             </div>
           </div>
         </div>
         
         {/* Estimation */}
-        <div className="text-center mb-6 p-3 bg-zinc-800/50 rounded-lg text-sm">
-          <p className="text-zinc-400">
-            Estimation : <span className={estimatedDamage > player.hp ? 'text-red-400 font-bold' : 'text-yellow-400'}>
-              ~{estimatedDamage} HP perdus
+        <div 
+          className="card-metal p-3 w-full max-w-md text-center mb-4"
+          style={{ borderColor: isDangerous ? 'var(--danger-light)' : '#2a2a2a' }}
+        >
+          <p style={{ color: 'var(--text-muted)' }}>
+            Estimation : 
+            <span 
+              className="font-bold ml-1"
+              style={{ color: isDangerous ? 'var(--danger-light)' : 'var(--copper)' }}
+            >
+              ~{estimatedDamage} HP
             </span>
-            {estimatedDamage > player.hp && <span className="text-red-400"> — DANGER</span>}
+            {isDangerous && (
+              <span 
+                className="ml-2 font-bold uppercase"
+                style={{ color: 'var(--danger-light)' }}
+              >
+                DANGER
+              </span>
+            )}
           </p>
         </div>
         
-        {/* Résultat temporaire */}
+        {/* Resultat temporaire */}
         {result && (
-          <div className="text-center mb-6 p-4 bg-zinc-800 rounded-xl animate-in text-lg font-bold">
-            {result}
-          </div>
-        )}
-        
-        {/* Actions */}
-        {!isResolving && (
-          <div className="space-y-3">
-            {/* COMBATTRE */}
-            <button
-              onClick={handleAttack}
-              className="w-full p-4 bg-red-800 hover:bg-red-700 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] border border-red-600"
-            >
-              <div className="font-bold text-xl">Combattre</div>
-              <div className="text-sm text-red-300">
-                Résolution immédiate — ~{estimatedDamage} HP perdus
-              </div>
-            </button>
-            
-            {/* FUIR */}
-            <button
-              onClick={handleFlee}
-              className="w-full p-4 bg-zinc-700 hover:bg-zinc-600 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] border border-zinc-600"
-            >
-              <div className="font-bold text-xl">Fuir</div>
-              <div className="text-sm text-zinc-300">
-                {Math.round(enemy.fleeChance * 100)}% de succès — Échec = 1 coup
-              </div>
-            </button>
-            
-            {/* PARLER */}
-            <button
-              onClick={handleTalk}
-              disabled={!canTalk}
-              className={`w-full p-4 rounded-xl transition-all border
-                ${canTalk 
-                  ? 'bg-amber-800 hover:bg-amber-700 hover:scale-[1.02] active:scale-[0.98] border-amber-600' 
-                  : 'bg-zinc-800 border-zinc-700 opacity-50 cursor-not-allowed'}
-              `}
-            >
-              <div className="font-bold text-xl">Parler</div>
-              <div className="text-sm text-amber-300">
-                {canTalk 
-                  ? `${Math.round(rpChance * 100)}% de succès — Négocier, intimider...`
-                  : 'Impossible avec cette créature'
-                }
-              </div>
-            </button>
+          <div 
+            className="card-metal p-4 w-full max-w-md text-center mb-4 animate-in"
+          >
+            <p className="font-bold" style={{ color: 'var(--text-primary)' }}>
+              {result}
+            </p>
           </div>
         )}
         
         {/* Stats joueur */}
-        <div className="mt-6 flex justify-center gap-6 text-sm text-zinc-400">
+        <div 
+          className="flex justify-center gap-6 text-sm"
+          style={{ color: 'var(--text-muted)' }}
+        >
           <span>HP {player.hp}/{player.maxHp}</span>
           <span>ATK {playerAtk}</span>
           <span>DEF {playerDef}</span>
         </div>
       </div>
+      
+      {/* Zone du pouce - Boutons d'action */}
+      {!isResolving && (
+        <div 
+          className="p-4 space-y-3"
+          style={{ 
+            paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
+            background: 'linear-gradient(to top, var(--bg-dark) 80%, transparent)'
+          }}
+        >
+          {/* Combattre */}
+          <button
+            onClick={handleAttack}
+            className="btn-danger w-full"
+          >
+            <div className="font-bold text-lg">Combattre</div>
+            <div 
+              className="text-xs mt-0.5"
+              style={{ color: 'rgba(255,255,255,0.6)' }}
+            >
+              Resolution immediate - ~{estimatedDamage} HP
+            </div>
+          </button>
+          
+          {/* Fuir et Parler */}
+          <div className="flex gap-3">
+            <button
+              onClick={handleFlee}
+              className="btn-neutral flex-1"
+            >
+              <div className="font-bold">Fuir</div>
+              <div 
+                className="text-xs mt-0.5"
+                style={{ color: 'var(--text-dim)' }}
+              >
+                {Math.round(enemy.fleeChance * 100)}%
+              </div>
+            </button>
+            
+            <button
+              onClick={handleTalk}
+              disabled={!canTalk}
+              className={canTalk ? 'btn-copper flex-1' : 'btn-neutral flex-1'}
+              style={!canTalk ? { opacity: 0.4 } : undefined}
+            >
+              <div className="font-bold">Parler</div>
+              <div 
+                className="text-xs mt-0.5"
+                style={{ color: canTalk ? 'rgba(0,0,0,0.6)' : 'var(--text-dim)' }}
+              >
+                {canTalk ? `${Math.round(rpChance * 100)}%` : 'Impossible'}
+              </div>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -18,6 +18,8 @@ function App() {
   const resetGame = useGameStore(state => state.resetGame);
   const currentLoot = useGameStore(state => state.currentLoot);
   const currentEvent = useGameStore(state => state.currentEvent);
+  const world = useGameStore(state => state.world);
+  const setScreen = useGameStore(state => state.setScreen);
   
   const [showTutorial, setShowTutorial] = useState(false);
   
@@ -37,61 +39,118 @@ function App() {
     return <TutorialScreen onComplete={handleTutorialComplete} />;
   }
 
+  // Vérifier si on est sur le hub
+  const currentTile = world.tiles.get(`${world.playerPosition.x},${world.playerPosition.y}`);
+  const isOnHub = currentTile?.type === 'hub';
+
   return (
-    <div className="min-h-screen bg-zinc-900 text-white flex flex-col">
-      {/* Header */}
-      <header className="p-4 border-b border-zinc-800">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
-            <span className="text-amber-400">SOUDA</span>
-            <span className="text-zinc-500 font-normal"> : Terra Incognita</span>
+    <div className="h-screen-safe flex flex-col" style={{ background: 'var(--bg-dark)' }}>
+      {/* === HEADER COMPACT === */}
+      <header className="safe-top px-4 py-3 flex items-center justify-between border-b" style={{ borderColor: '#2a2a2a' }}>
+        <div>
+          <h1 className="text-lg font-bold tracking-wide" style={{ color: 'var(--copper)' }}>
+            SOUDA
           </h1>
-          <button
-            onClick={() => {
-              if (confirm('Recommencer une nouvelle partie ?')) {
-                resetGame();
-              }
-            }}
-            className="text-xs px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 rounded transition-colors"
-          >
-            Nouvelle partie
-          </button>
+          <p className="text-xs" style={{ color: 'var(--text-dim)' }}>
+            Jour {world.time.day}, {world.time.hour}h
+          </p>
         </div>
+        <button
+          onClick={() => {
+            if (confirm('Recommencer une nouvelle partie ?')) {
+              resetGame();
+            }
+          }}
+          className="text-xs px-3 py-1.5 rounded"
+          style={{ 
+            background: 'var(--bg-surface)', 
+            color: 'var(--text-muted)',
+            border: '1px solid #2a2a2a'
+          }}
+        >
+          Reset
+        </button>
       </header>
 
-      {/* Status Bar */}
-      <div className="p-4">
-        <div className="max-w-6xl mx-auto">
+      {/* === STATUS BAR === */}
+      {screen === 'map' && (
+        <div className="px-4 py-3">
           <StatusBar />
         </div>
-      </div>
+      )}
 
-      {/* Main Content */}
-      <main className="flex-1 p-4">
-        <div className="max-w-6xl mx-auto">
-          {screen === 'map' && (
-            <div className="flex flex-col lg:flex-row gap-6 items-start justify-center">
-              <div className="flex-shrink-0">
-                <WorldMap />
-              </div>
-              <div className="w-full lg:w-auto">
-                <Backpack />
-              </div>
+      {/* === MAIN CONTENT === */}
+      <main className="flex-1 overflow-hidden flex flex-col">
+        {screen === 'map' && (
+          <>
+            {/* Map centrée */}
+            <div className="flex-1 flex items-center justify-center px-4 py-2 overflow-hidden">
+              <WorldMap />
             </div>
-          )}
-        </div>
+            
+            {/* Inventaire horizontal en bas */}
+            <div className="px-4 pb-2">
+              <Backpack />
+            </div>
+          </>
+        )}
       </main>
 
-      {/* Footer */}
-      <footer className="p-4 border-t border-zinc-800 text-center text-xs text-zinc-600 flex items-center justify-center gap-4">
-        <span>Prototype v0.3</span>
-        <span className="flex items-center gap-1 text-emerald-600">
-          <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-          Sauvegarde auto
+      {/* === ZONE DU POUCE (BOUTONS ACTION) === */}
+      {screen === 'map' && !currentLoot && !currentEvent && (
+        <div 
+          className="px-4 pb-4 pt-2 flex gap-3"
+          style={{ 
+            paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
+            background: 'linear-gradient(to top, var(--bg-dark) 90%, transparent)'
+          }}
+        >
+          {isOnHub ? (
+            <button
+              onClick={() => setScreen('hub')}
+              className="btn-copper flex-1 text-center"
+            >
+              Entrer dans l'Auberge
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                // Retour au hub
+                const hubPos = { x: 3, y: 3 };
+                if (world.playerPosition.x !== hubPos.x || world.playerPosition.y !== hubPos.y) {
+                  setScreen('hub');
+                }
+              }}
+              className="btn-neutral flex-1 text-center"
+              style={{ opacity: 0.7 }}
+              disabled
+            >
+              Exploration active
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* === FOOTER MINIMAL === */}
+      <footer 
+        className="px-4 py-2 flex items-center justify-center gap-4 text-xs"
+        style={{ 
+          color: 'var(--text-dim)',
+          borderTop: '1px solid #1a1a1a',
+          paddingBottom: 'max(8px, env(safe-area-inset-bottom))'
+        }}
+      >
+        <span>v0.3</span>
+        <span className="flex items-center gap-1" style={{ color: 'var(--positive-light)' }}>
+          <span 
+            className="w-1.5 h-1.5 rounded-full animate-pulse" 
+            style={{ background: 'var(--positive-light)' }} 
+          />
+          Auto-save
         </span>
       </footer>
 
-      {/* Overlays */}
+      {/* === OVERLAYS === */}
       {currentLoot && screen === 'map' && <LootPopup />}
       {currentEvent && screen === 'map' && <EventScreen />}
       {screen === 'combat' && <CombatScreen />}
