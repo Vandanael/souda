@@ -110,7 +110,7 @@ export const useGameStore = create<GameStore>()(
 
       moveTo: (x: number, y: number) => {
         const state = get();
-        const { world, advanceTime, player, inventory } = state;
+        const { world, advanceTime, inventory } = state;
         const tileId = `${x},${y}`;
         const targetTile = world.tiles.get(tileId);
         
@@ -541,7 +541,6 @@ export const useGameStore = create<GameStore>()(
       // ========================================
 
       resolveEventChoice: (choice: EventChoice): { success: boolean; message: string } => {
-        const state = get();
         const chance = choice.successChance ?? 1;
         const isSuccess = Math.random() < chance;
         

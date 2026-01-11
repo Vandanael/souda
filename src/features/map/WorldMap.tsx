@@ -49,7 +49,7 @@ export function WorldMap() {
           width: 'min(90vw, 400px)',
         }}
       >
-        {grid.map((row, y) =>
+        {grid.map((row) =>
           row.map((tile) => {
             const isPlayerHere = 
               tile.x === world.playerPosition.x && 
