@@ -1,16 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useGameStore } from './store/gameStore';
-import { WorldMap } from './features/map/WorldMap';
-import { StatusBar } from './features/ui/StatusBar';
-import { Backpack } from './features/inventory/Backpack';
-import { LootPopup } from './features/loot/LootPopup';
-import { CombatScreen } from './features/combat/CombatScreen';
-import { HubScreen } from './features/hub/HubScreen';
-import { GameOverScreen } from './features/ui/GameOverScreen';
-import { EventScreen } from './features/events/EventScreen';
-import { TutorialScreen } from './features/ui/TutorialScreen';
-
-const TUTORIAL_KEY = 'souda-tutorial-done';
+import { STORAGE_KEYS } from './constants';
+import {
+  WorldMap,
+  StatusBar,
+  Backpack,
+  LootPopup,
+  CombatScreen,
+  HubScreen,
+  GameOverScreen,
+  EventScreen,
+  TutorialScreen,
+} from './features';
 
 function App() {
   const screen = useGameStore(state => state.screen);
@@ -21,14 +22,14 @@ function App() {
   const [showTutorial, setShowTutorial] = useState(false);
   
   useEffect(() => {
-    const tutorialDone = localStorage.getItem(TUTORIAL_KEY);
+    const tutorialDone = localStorage.getItem(STORAGE_KEYS.TUTORIAL_DONE);
     if (!tutorialDone) {
       setShowTutorial(true);
     }
   }, []);
   
   const handleTutorialComplete = () => {
-    localStorage.setItem(TUTORIAL_KEY, 'true');
+    localStorage.setItem(STORAGE_KEYS.TUTORIAL_DONE, 'true');
     setShowTutorial(false);
   };
   
@@ -70,12 +71,9 @@ function App() {
         <div className="max-w-6xl mx-auto">
           {screen === 'map' && (
             <div className="flex flex-col lg:flex-row gap-6 items-start justify-center">
-              {/* Map */}
               <div className="flex-shrink-0">
                 <WorldMap />
               </div>
-              
-              {/* Sidebar */}
               <div className="w-full lg:w-auto">
                 <Backpack />
               </div>
@@ -86,7 +84,7 @@ function App() {
 
       {/* Footer */}
       <footer className="p-4 border-t border-zinc-800 text-center text-xs text-zinc-600 flex items-center justify-center gap-4">
-        <span>Prototype v0.2</span>
+        <span>Prototype v0.3</span>
         <span className="flex items-center gap-1 text-emerald-600">
           <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
           Sauvegarde auto

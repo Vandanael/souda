@@ -1,25 +1,29 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+
 import type { 
   GameStore, 
   GameState, 
+  GameScreen,
   Tile, 
   LootCard, 
   Enemy,
+  EventChoice,
   CombatResult,
-  GameScreen 
 } from '../types';
+
 import { 
   generateMap, 
   HUB_POSITION, 
   getAdjacentPositions,
   areAdjacent,
-  TRAVEL_TIME 
+  TRAVEL_TIME,
 } from '../data/map';
 import { rollLoot, STARTER_WEAPON, STARTER_ARMOR, STARTER_ITEMS, getLootById } from '../data/loot';
 import { spawnEnemy } from '../data/enemies';
 import { rollEvent } from '../data/events';
-import type { EventChoice } from '../types';
+
+import { GAME_CONFIG, SKILL_BONUSES, STORAGE_KEYS } from '../constants';
 
 // ============================================
 // GAME STORE - SOUDA: Terra Incognita
@@ -30,11 +34,11 @@ const createInitialState = (): GameState => ({
   screen: 'map',
   
   player: {
-    hp: 100,
-    maxHp: 100,
-    hunger: 4, // 4 jours de faim
-    gold: 5,
-    karma: 0, // -100 à +100
+    hp: GAME_CONFIG.STARTING_HP,
+    maxHp: GAME_CONFIG.STARTING_HP,
+    hunger: GAME_CONFIG.STARTING_HUNGER,
+    gold: GAME_CONFIG.STARTING_GOLD,
+    karma: 0,
   },
   
   inventory: {
@@ -45,7 +49,7 @@ const createInitialState = (): GameState => ({
       skills: [],
     },
     chest: [],
-    maxWeight: 10,
+    maxWeight: GAME_CONFIG.MAX_WEIGHT,
   },
   
   world: {
@@ -148,9 +152,9 @@ export const useGameStore = create<GameStore>()(
         let enemy: Enemy | null = null;
         
         if (isFirstVisit && targetTile.type !== 'hub') {
-          // Bonus de loot si skill Fouilleur équipé (+20%)
+          // Bonus de loot si skill Fouilleur équipé
           const hasScavenger = inventory.equipped.skills.some(s => s.id === 'skill_scavenger');
-          loot = rollLoot(targetTile.type, hasScavenger ? 0.2 : 0);
+          loot = rollLoot(targetTile.type, hasScavenger ? SKILL_BONUSES.SCAVENGER_LOOT_BONUS : 0);
           enemy = spawnEnemy(targetTile.type);
         }
         
@@ -379,7 +383,7 @@ export const useGameStore = create<GameStore>()(
       getPlayerMaxHp: (): number => {
         const { inventory, player } = get();
         const hasEndurant = inventory.equipped.skills.some(s => s.id === 'skill_tough');
-        return player.maxHp + (hasEndurant ? 20 : 0);
+        return player.maxHp + (hasEndurant ? SKILL_BONUSES.TOUGH_HP_BONUS : 0);
       },
       
       hasSkill: (skillId: string): boolean => {
@@ -892,7 +896,7 @@ export const useGameStore = create<GameStore>()(
       },
     }),
     {
-      name: 'souda-save',
+      name: STORAGE_KEYS.GAME_SAVE,
       // Sérialisation personnalisée pour Map
       storage: {
         getItem: (name) => {
