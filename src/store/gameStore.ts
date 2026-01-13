@@ -15,6 +15,8 @@ import { getRandomEnemy, type Enemy } from '../types/enemy'
 import { Item } from '../types/item'
 import { Location, ExplorationResult, normalizeLocation, LOCATION_TYPES } from '../types/location'
 import { calculateStatsFromEquipment, type PlayerStats } from '../utils/stats'
+import { audioManager } from '../features/audio/audioManager'
+import { getOriginById } from '../features/meta/origins'
 
 export type GamePhase = 'start' | 'origin' | 'tutorial' | 'aube' | 'exploration' | 'crepuscule' | 'defeat' | 'victory' | 'inventory' | 'marche' | 'morten' | 'forge' | 'taverne' | 'narrative' | 'hallOfFame' | 'settings'
 
@@ -245,9 +247,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
   },
   
-  startNewGame: async (originId: string) => {
-    // Importer getOriginById dynamiquement pour éviter les dépendances circulaires
-    const { getOriginById } = await import('../features/meta/origins')
+  startNewGame: (originId: string) => {
     const origin = getOriginById(originId)
     
     // Plus de tutorial pour l'instant - aller directement à l'aube
@@ -944,9 +944,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     })
     
     // Son de perte d'or
-    import('../features/audio/audioManager').then(({ audioManager }) => {
-      audioManager.playSound('coins_loss', 0.7)
-    }).catch(() => {})
+    audioManager.playSound('coins_loss', 0.7).catch(() => {})
     
     // Auto-save après transaction commerciale (achat)
     autoSave(get()).catch(() => {}) // Ignorer les erreurs silencieusement
@@ -994,9 +992,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     })
     
     // Son de perte d'or
-    import('../features/audio/audioManager').then(({ audioManager }) => {
-      audioManager.playSound('coins_loss', 0.7)
-    }).catch(() => {})
+    audioManager.playSound('coins_loss', 0.7).catch(() => {})
     
     // Auto-save après transaction commerciale (remboursement dette)
     autoSave(get()).catch(() => {}) // Ignorer les erreurs silencieusement

@@ -1,5 +1,6 @@
 import { UnlockState, ArchivedRun } from './types'
 import { getRuns } from './hallOfFame'
+import { ORIGINS } from './origins'
 
 /**
  * Vérifie et met à jour les unlocks selon les conditions
@@ -27,7 +28,6 @@ export async function checkUnlocks(
   }
   
   // Vérifier les origines
-  const { ORIGINS } = await import('./origins')
   for (const origin of ORIGINS) {
     if (!newUnlocks.origins.includes(origin.id)) {
       if (origin.id === 'noble') {

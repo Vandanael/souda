@@ -26,6 +26,25 @@ if (isWeb) {
   }
 }
 
+// Enregistrer le service worker
+if (isWeb && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    // Utiliser le base path pour GitHub Pages (/souda/)
+    // @ts-ignore - BASE_URL est défini par Vite
+    const baseUrl = import.meta.env.BASE_URL || '/souda/'
+    const swPath = baseUrl + 'sw.js'
+    navigator.serviceWorker.register(swPath)
+      .then((registration) => {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ Service Worker enregistré:', registration.scope)
+        }
+      })
+      .catch((error) => {
+        console.warn('⚠️ Erreur enregistrement Service Worker:', error)
+      })
+  })
+}
+
 // Charger la sauvegarde au démarrage
 loadGameState().then((savedState) => {
   if (savedState) {

@@ -16,14 +16,19 @@ function createGameState(overrides: Partial<GameState>): GameState {
     forgeStockDay: 0,
     npcFlags: {},
     rumors: [],
+    hasEatenToday: false,
     narrativeCounters: {},
     triggeredEvents: [],
+    eventCooldowns: {},
+    recentMonologues: [],
+    characterArcs: {},
     selectedOrigin: 'deserteur',
     equipment: {},
     inventory: [],
     playerStats: { atk: 10, def: 10, vit: 10 },
     actionsRemaining: 3,
     dailyLocations: [],
+    persistentLocations: [],
     currentEvent: 'none',
     eventResult: null,
     combatResult: null,
@@ -51,6 +56,7 @@ function createGameState(overrides: Partial<GameState>): GameState {
     sellItem: () => {},
     buyItem: () => false,
     repayDebt: () => false,
+    buyMeal: () => false,
     generateMarketStock: () => {},
     repairItem: () => false,
     buyForgeItem: () => false,
@@ -59,7 +65,11 @@ function createGameState(overrides: Partial<GameState>): GameState {
     generateRumors: () => {},
     triggerNarrativeEvent: () => {},
     applyEventConsequence: () => {},
-    incrementCounter: () => {}
+    incrementCounter: () => {}, // Mock function, parameters ignored
+    initCharacterArc: () => {},
+    updateCharacterArc: () => {},
+    getCharacterArc: () => null,
+    updateCharacterTrust: () => {}
   }
   
   return { ...defaultState, ...overrides }

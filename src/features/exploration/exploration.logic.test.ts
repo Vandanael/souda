@@ -116,7 +116,7 @@ describe('Exploration Logic', () => {
       
       for (let i = 0; i < 100; i++) {
         const random = new SeededRandom(i)
-        const result = resolveExploration(testLocation, testPlayerStats, testEquipment, random)
+        const result = resolveExploration(testLocation, testPlayerStats, testEquipment, undefined, random)
         results[result.event]++
       }
       
@@ -139,7 +139,7 @@ describe('Exploration Logic', () => {
       let result
       for (let i = 0; i < 100; i++) {
         const random = new SeededRandom(i)
-        result = resolveExploration(testLocation, testPlayerStats, testEquipment, random)
+        result = resolveExploration(testLocation, testPlayerStats, testEquipment, undefined, random)
         if (result.event === 'combat') break
       }
       
@@ -154,7 +154,7 @@ describe('Exploration Logic', () => {
       let result
       for (let i = 0; i < 100; i++) {
         const random = new SeededRandom(i)
-        result = resolveExploration(testLocation, testPlayerStats, testEquipment, random)
+        result = resolveExploration(testLocation, testPlayerStats, testEquipment, undefined, random)
         if (result.event === 'loot') break
       }
       
@@ -168,7 +168,7 @@ describe('Exploration Logic', () => {
       let result
       for (let i = 0; i < 100; i++) {
         const random = new SeededRandom(i)
-        result = resolveExploration(testLocation, testPlayerStats, testEquipment, random)
+        result = resolveExploration(testLocation, testPlayerStats, testEquipment, undefined, random)
         if (result.event === 'choice') break
       }
       
@@ -185,7 +185,7 @@ describe('Exploration Logic', () => {
       let result
       for (let i = 0; i < 100; i++) {
         const random = new SeededRandom(i)
-        result = resolveExploration(testLocation, testPlayerStats, testEquipment, random)
+        result = resolveExploration(testLocation, testPlayerStats, testEquipment, undefined, random)
         if (result.event === 'empty') break
       }
       

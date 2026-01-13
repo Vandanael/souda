@@ -3,6 +3,7 @@ import { useGameStore } from '../store/gameStore'
 import { saveRun } from '../features/meta/hallOfFame'
 import { determineEnding } from '../features/endings/endings.logic'
 import { useMetaProgressionStore } from '../store/metaProgression'
+import { loadUnlockState, checkUnlocks, saveUnlockState } from '../features/meta/unlocks'
 import EndingScreen from './EndingScreen'
 import MetaProgressionDisplay from '../components/MetaProgressionDisplay'
 
@@ -67,7 +68,6 @@ export default function VictoryScreen() {
       
       await saveRun(runData)
       
-      const { loadUnlockState, checkUnlocks, saveUnlockState } = await import('../features/meta/unlocks')
       const currentUnlocks = await loadUnlockState()
       const newUnlocks = await checkUnlocks(runData, currentUnlocks)
       await saveUnlockState(newUnlocks)
