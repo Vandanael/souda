@@ -1,276 +1,266 @@
-import { useState, useEffect } from 'react';
-import { useGameStore } from '../../store/gameStore';
-import { sounds } from '../../utils/sounds';
+import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Enemy } from '../../types/enemy'
+import { CombatResult, resolveCombat } from './combat.logic'
+import { PlayerStats } from '../../utils/stats'
+import EnemyDisplay from './EnemyDisplay'
+import CombatAnimation from './CombatAnimation'
+import CombatResultDisplay from './CombatResult'
+import { audioManager } from '../audio/audioManager'
+import { ScreenShakeWrapper } from '../../hooks/useScreenShake'
+import { autoSave } from '../game/saveSystem'
+import { useGameStore } from '../../store/gameStore'
 
-export function CombatScreen() {
-  const combat = useGameStore(state => state.combat);
-  const player = useGameStore(state => state.player);
-  const performCombat = useGameStore(state => state.performCombat);
-  const tryFlee = useGameStore(state => state.tryFlee);
-  const tryTalk = useGameStore(state => state.tryTalk);
-  const getPlayerAtk = useGameStore(state => state.getPlayerAtk);
-  const getPlayerDef = useGameStore(state => state.getPlayerDef);
+type CombatPhase = 'anticipation' | 'resolution' | 'result' | 'complete'
+
+interface CombatScreenProps {
+  enemy: Enemy
+  playerStats: PlayerStats
+  onCombatEnd: (result: CombatResult) => void
+}
+
+export default function CombatScreen({ 
+  enemy, 
+  playerStats,
+  onCombatEnd 
+}: CombatScreenProps) {
+  const [phase, setPhase] = useState<CombatPhase>('anticipation')
+  const [combatResult, setCombatResult] = useState<CombatResult | null>(null)
+  const [shouldShake, setShouldShake] = useState(false)
   
-  const [result, setResult] = useState<string | null>(null);
-  const [isResolving, setIsResolving] = useState(false);
-  
-  const { enemy, enemyHp } = combat;
-  
+  // Résoudre le combat immédiatement (logique pure)
   useEffect(() => {
-    if (enemy && combat.isActive) sounds.combatStart();
-  }, [enemy, combat.isActive]);
-  
-  if (!enemy || !combat.isActive) return null;
-  
-  const playerAtk = getPlayerAtk();
-  const playerDef = getPlayerDef();
-  
-  // Estimation
-  const damageToEnemy = Math.max(1, playerAtk - enemy.def);
-  const damageToPlayer = Math.max(1, enemy.atk - playerDef);
-  const turnsToKill = Math.ceil(enemyHp / damageToEnemy);
-  const estimatedDamage = turnsToKill * damageToPlayer;
-  const isDangerous = estimatedDamage > player.hp;
-  
-  // Chances RP
-  const getRpChance = () => {
-    const chances: Record<string, number> = {
-      wolf: 0, wolf_pack_alpha: 0,
-      bandit: 0.4, mercenary: 0.3, deserter: 0.5, patrol_chief: 0.1,
-    };
-    return chances[enemy.id] ?? 0.2;
-  };
-  
-  const rpChance = getRpChance();
-  const canTalk = rpChance > 0;
-  
-  const handleAttack = async () => {
-    setIsResolving(true);
-    sounds.attack();
-    const res = performCombat();
+    const result = resolveCombat(playerStats, enemy)
+    setCombatResult(result)
     
-    if (res.victory) {
-      sounds.victory();
-      setResult(`Victoire ! ${enemy.name} est vaincu.`);
-    } else if (res.died) {
-      sounds.defeat();
-      setResult('Tu es tombe au combat...');
+    // Déclencher shake si le joueur prend des dégâts
+    if (result.outcome === 'costly' || result.outcome === 'flee' || result.outcome === 'defeat') {
+      setShouldShake(true)
+      setTimeout(() => setShouldShake(false), 500)
     }
     
-    setTimeout(() => {
-      setResult(null);
-      setIsResolving(false);
-    }, 1500);
-  };
+    // Sauvegarder l'état au début du combat (phase anticipation)
+    const gameState = useGameStore.getState()
+    autoSave({
+      ...gameState,
+      currentEnemy: enemy,
+      combatResult: result,
+      currentEvent: 'combat'
+    }).catch(() => {})
+  }, [enemy, playerStats])
   
-  const handleFlee = () => {
-    setIsResolving(true);
-    sounds.flee();
-    const res = tryFlee();
-    
-    if (res.fled) {
-      setResult('Tu fuis le combat !');
-    } else {
-      sounds.error();
-      setResult(`Fuite echouee ! -${res.damageTaken} HP`);
+  // Phase 1 : Anticipation (0.5s)
+  useEffect(() => {
+    if (phase === 'anticipation') {
+      // Crossfade vers musique de combat
+      audioManager.crossfadeMusic('ambient_combat', 1000)
+      audioManager.playSound('combat_start')
+      
+      // Sauvegarder au début de la phase anticipation
+      const gameState = useGameStore.getState()
+      autoSave({
+        ...gameState,
+        currentEnemy: enemy,
+        combatResult: combatResult,
+        currentEvent: 'combat',
+        phase: 'exploration' // Garder la phase exploration pour la sauvegarde
+      }).catch(() => {})
+      
+      const timer = setTimeout(() => {
+        setPhase('resolution')
+      }, 500)
+      return () => clearTimeout(timer)
+    }
+  }, [phase, enemy, combatResult])
+  
+  // Sauvegarder au début de la phase resolution
+  useEffect(() => {
+    if (phase === 'resolution' && combatResult) {
+      const gameState = useGameStore.getState()
+      autoSave({
+        ...gameState,
+        currentEnemy: enemy,
+        combatResult: combatResult,
+        currentEvent: 'combat',
+        phase: 'exploration'
+      }).catch(() => {})
+    }
+  }, [phase, enemy, combatResult])
+  
+  // Sauvegarder au début de la phase result
+  useEffect(() => {
+    if (phase === 'result' && combatResult) {
+      const gameState = useGameStore.getState()
+      autoSave({
+        ...gameState,
+        currentEnemy: enemy,
+        combatResult: combatResult,
+        currentEvent: 'combat',
+        phase: 'exploration'
+      }).catch(() => {})
+    }
+  }, [phase, enemy, combatResult])
+  
+  // Nettoyer la musique de combat à la fin
+  useEffect(() => {
+    if (phase === 'complete') {
+      // Crossfade retour vers musique d'exploration
+      audioManager.crossfadeMusic('ambient_explore', 1000)
     }
     
-    setTimeout(() => {
-      setResult(null);
-      setIsResolving(false);
-    }, 1500);
-  };
+    return () => {
+      // Cleanup si le composant est démonté
+      if (phase === 'complete') {
+        audioManager.crossfadeMusic('ambient_explore', 1000)
+      }
+    }
+  }, [phase])
   
-  const handleTalk = () => {
-    setIsResolving(true);
-    const res = tryTalk();
-    setResult(res.message);
-    setTimeout(() => {
-      setResult(null);
-      setIsResolving(false);
-    }, 1500);
-  };
-
+  // Phase 2 : Résolution (2s) - gérée par CombatAnimation
+  const handleResolutionComplete = () => {
+    setPhase('result')
+  }
+  
+  // Phase 3 : Résultat (1.5s) - gérée par CombatResult
+  const handleResultComplete = () => {
+    setPhase('complete')
+    if (combatResult) {
+      // Jouer le son de résultat
+      if (combatResult.outcome === 'defeat') {
+        audioManager.playSound('defeat')
+      } else if (combatResult.outcome === 'flee') {
+        audioManager.playSound('flee')
+      } else {
+        audioManager.playSound('victory')
+      }
+      
+      onCombatEnd(combatResult)
+    }
+  }
+  
+  // Overlay sombre pour anticipation
+  const overlayVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 0.7 },
+    exit: { opacity: 0 }
+  }
+  
   return (
-    <div 
-      className="fixed inset-0 z-50 flex flex-col"
-      style={{ background: 'linear-gradient(180deg, var(--danger) 0%, var(--bg-dark) 100%)' }}
-    >
-      {/* Header */}
-      <div className="safe-top px-4 py-3 text-center">
-        <h2 
-          className="text-xl font-bold tracking-wider uppercase"
-          style={{ color: 'var(--danger-light)' }}
-        >
-          Rencontre
-        </h2>
-      </div>
-      
-      {/* Contenu central */}
-      <div className="flex-1 flex flex-col items-center justify-center px-4 overflow-y-auto">
-        {/* Ennemi */}
-        <div className="card-metal p-5 w-full max-w-md text-center mb-4">
-          <h3 
-            className="text-2xl font-bold mb-2"
-            style={{ color: 'var(--text-primary)' }}
-          >
-            {enemy.name}
-          </h3>
-          <p 
-            className="italic text-sm mb-4"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            {enemy.description}
-          </p>
-          
-          {/* Stats ennemi */}
-          <div className="flex justify-center gap-6">
-            <div className="text-center">
-              <p 
-                className="text-xs uppercase mb-0.5"
-                style={{ color: 'var(--text-dim)' }}
-              >
-                HP
-              </p>
-              <p 
-                className="font-bold"
-                style={{ color: 'var(--danger-light)' }}
-              >
-                {enemyHp}/{enemy.hp}
-              </p>
-            </div>
-            <div className="text-center">
-              <p 
-                className="text-xs uppercase mb-0.5"
-                style={{ color: 'var(--text-dim)' }}
-              >
-                ATK
-              </p>
-              <p 
-                className="font-bold"
-                style={{ color: 'var(--stat-atk)' }}
-              >
-                {enemy.atk}
-              </p>
-            </div>
-            <div className="text-center">
-              <p 
-                className="text-xs uppercase mb-0.5"
-                style={{ color: 'var(--text-dim)' }}
-              >
-                DEF
-              </p>
-              <p 
-                className="font-bold"
-                style={{ color: 'var(--stat-def)' }}
-              >
-                {enemy.def}
-              </p>
-            </div>
-          </div>
-        </div>
-        
-        {/* Estimation */}
-        <div 
-          className="card-metal p-3 w-full max-w-md text-center mb-4"
-          style={{ borderColor: isDangerous ? 'var(--danger-light)' : '#2a2a2a' }}
-        >
-          <p style={{ color: 'var(--text-muted)' }}>
-            Estimation : 
-            <span 
-              className="font-bold ml-1"
-              style={{ color: isDangerous ? 'var(--danger-light)' : 'var(--copper)' }}
-            >
-              ~{estimatedDamage} HP
-            </span>
-            {isDangerous && (
-              <span 
-                className="ml-2 font-bold uppercase"
-                style={{ color: 'var(--danger-light)' }}
-              >
-                DANGER
-              </span>
-            )}
-          </p>
-        </div>
-        
-        {/* Resultat temporaire */}
-        {result && (
-          <div 
-            className="card-metal p-4 w-full max-w-md text-center mb-4 animate-in"
-          >
-            <p className="font-bold" style={{ color: 'var(--text-primary)' }}>
-              {result}
-            </p>
-          </div>
+    <ScreenShakeWrapper intensity={4} duration={500} trigger={shouldShake}>
+      <div style={{
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: '1rem'
+      }}>
+      {/* Overlay sombre pour anticipation */}
+      <AnimatePresence>
+        {phase === 'anticipation' && (
+          <motion.div
+            variants={overlayVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: '#000',
+              zIndex: 1
+            }}
+          />
         )}
-        
-        {/* Stats joueur */}
-        <div 
-          className="flex justify-center gap-6 text-sm"
-          style={{ color: 'var(--text-muted)' }}
-        >
-          <span>HP {player.hp}/{player.maxHp}</span>
-          <span>ATK {playerAtk}</span>
-          <span>DEF {playerDef}</span>
-        </div>
-      </div>
+      </AnimatePresence>
       
-      {/* Zone du pouce - Boutons d'action */}
-      {!isResolving && (
-        <div 
-          className="p-4 space-y-3"
-          style={{ 
-            paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
-            background: 'linear-gradient(to top, var(--bg-dark) 80%, transparent)'
-          }}
-        >
-          {/* Combattre */}
-          <button
-            onClick={handleAttack}
-            className="btn-danger w-full"
+      {/* Phase 1 : Anticipation */}
+      <AnimatePresence>
+        {phase === 'anticipation' && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{ duration: 0.5 }}
+            style={{
+              position: 'relative',
+              zIndex: 2,
+              width: '100%',
+              maxWidth: '500px',
+              textAlign: 'center'
+            }}
           >
-            <div className="font-bold text-lg">Combattre</div>
-            <div 
-              className="text-xs mt-0.5"
-              style={{ color: 'rgba(255,255,255,0.6)' }}
+            <motion.div
+              initial={{ y: -20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.1 }}
+              style={{
+                fontSize: '2rem',
+                fontWeight: 'bold',
+                marginBottom: '2rem',
+                color: '#fff'
+              }}
             >
-              Resolution immediate - ~{estimatedDamage} HP
-            </div>
-          </button>
-          
-          {/* Fuir et Parler */}
-          <div className="flex gap-3">
-            <button
-              onClick={handleFlee}
-              className="btn-neutral flex-1"
-            >
-              <div className="font-bold">Fuir</div>
-              <div 
-                className="text-xs mt-0.5"
-                style={{ color: 'var(--text-dim)' }}
-              >
-                {Math.round(enemy.fleeChance * 100)}%
-              </div>
-            </button>
+              ⚔️ COMBAT !
+            </motion.div>
             
-            <button
-              onClick={handleTalk}
-              disabled={!canTalk}
-              className={canTalk ? 'btn-copper flex-1' : 'btn-neutral flex-1'}
-              style={!canTalk ? { opacity: 0.4 } : undefined}
-            >
-              <div className="font-bold">Parler</div>
-              <div 
-                className="text-xs mt-0.5"
-                style={{ color: canTalk ? 'rgba(0,0,0,0.6)' : 'var(--text-dim)' }}
-              >
-                {canTalk ? `${Math.round(rpChance * 100)}%` : 'Impossible'}
-              </div>
-            </button>
-          </div>
+            <EnemyDisplay enemy={enemy} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      {/* Phase 2 : Résolution */}
+      <AnimatePresence>
+        {phase === 'resolution' && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            style={{
+              width: '100%',
+              maxWidth: '500px',
+              textAlign: 'center'
+            }}
+          >
+            <CombatAnimation onComplete={handleResolutionComplete} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      {/* Phase 3 : Résultat */}
+      <AnimatePresence>
+        {phase === 'result' && combatResult && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            style={{
+              width: '100%',
+              maxWidth: '500px'
+            }}
+          >
+            <CombatResultDisplay 
+              result={combatResult} 
+              onComplete={handleResultComplete}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      {/* Phase 4 : Complete - transition automatique vers écran suivant */}
+      {phase === 'complete' && (
+        <div style={{ opacity: 0 }}>
+          {/* Écran vide, la transition est gérée par onCombatEnd */}
         </div>
       )}
-    </div>
-  );
+      </div>
+    </ScreenShakeWrapper>
+  )
 }

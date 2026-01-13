@@ -1,12 +1,12 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// https://vite.dev/config/
+// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/souda/',  // GitHub Pages base path
-  server: {
-    port: 3000,
-    open: true,
+  base: '/souda/', // GitHub Pages subpath (change to '/' if using custom domain)
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
   },
 })

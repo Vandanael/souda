@@ -1,35 +1,37 @@
 {
   "name": "souda",
   "version": "0.1.0",
-  "description": "SOUDA: Terra Incognita - Un idle dungeon crawler low fantasy",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "lint": "tsc --noEmit"
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
+    "deploy": "npm run build && gh-pages -d dist"
   },
-  "keywords": [
-    "game",
-    "dungeon-crawler",
-    "low-fantasy",
-    "exploration"
-  ],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "zustand": "^5.0.3"
+    "framer-motion": "^12.26.2",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "zustand": "^4.4.7"
   },
   "devDependencies": {
-    "@types/react": "^19.0.7",
-    "@types/react-dom": "^19.0.3",
-    "@vitejs/plugin-react": "^4.3.4",
-    "autoprefixer": "^10.4.23",
-    "postcss": "^8.5.6",
-    "tailwindcss": "^3.4.19",
-    "typescript": "^5.7.3",
-    "vite": "^6.0.7"
+    "@types/react": "^18.2.43",
+    "@types/react-dom": "^18.2.17",
+    "@typescript-eslint/eslint-plugin": "^6.14.0",
+    "@typescript-eslint/parser": "^6.14.0",
+    "@vitejs/plugin-react": "^4.2.1",
+    "@vitest/ui": "^4.0.17",
+    "eslint": "^8.55.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.5",
+    "gh-pages": "^6.1.1",
+    "happy-dom": "^20.1.0",
+    "typescript": "^5.2.2",
+    "vite": "^5.0.8",
+    "vitest": "^4.0.17"
   }
 }
