@@ -29,39 +29,44 @@ if (isWeb) {
 // Enregistrer le service worker
 if (isWeb && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    // Désactiver complètement le service worker pour éviter les erreurs
-    // Désinscrire tous les anciens service workers
-    navigator.serviceWorker.getRegistrations().then((registrations) => {
-      registrations.forEach((registration) => {
-        registration.unregister().catch(() => {
-          // Ignorer les erreurs de désinscription
-        })
-      })
-    }).catch(() => {
-      // Ignorer les erreurs
-    })
-    
-    // Optionnel : Enregistrer le nouveau service worker (version minimale)
     // @ts-ignore - BASE_URL est défini par Vite
     const baseUrl = import.meta.env.BASE_URL || '/souda/'
     const swPath = baseUrl + 'sw.js'
     
-    // Enregistrer avec updateViaCache: 'none' pour forcer la mise à jour
-    navigator.serviceWorker.register(swPath, { updateViaCache: 'none' })
-      .then((registration) => {
-        // Forcer la mise à jour immédiate
-        registration.update()
-        
-        if (process.env.NODE_ENV === 'development') {
-          console.log('✅ Service Worker enregistré (version minimale):', registration.scope)
+    // D'abord, désinscrire tous les anciens service workers
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+      // Désinscrire tous les anciens
+      return Promise.all(
+        registrations.map((registration) => registration.unregister())
+      )
+    }).then(() => {
+      // Attendre un peu pour que la désinscription soit complète
+      return new Promise(resolve => setTimeout(resolve, 100))
+    }).then(() => {
+      // Enregistrer le nouveau service worker avec updateViaCache: 'none'
+      return navigator.serviceWorker.register(swPath, { 
+        updateViaCache: 'none' 
+      })
+    }).then((registration) => {
+      // Forcer la mise à jour immédiate
+      registration.update()
+      
+      // Écouter les messages du service worker
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'SW_ACTIVATED') {
+          // Le service worker est activé, recharger la page pour forcer le nouveau cache
+          window.location.reload()
         }
       })
-      .catch((error) => {
-        // Ignorer silencieusement les erreurs d'enregistrement
-        if (process.env.NODE_ENV === 'development') {
-          console.warn('⚠️ Service Worker non disponible:', error)
-        }
-      })
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✅ Service Worker enregistré:', registration.scope)
+      }
+    }).catch((error) => {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('⚠️ Service Worker non disponible:', error)
+      }
+    })
   })
 }
 
