@@ -5,6 +5,12 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   base: '/souda/', // GitHub Pages subpath (change to '/' if using custom domain)
+  server: {
+    fs: {
+      strict: false,
+    },
+    middlewareMode: false,
+  },
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
