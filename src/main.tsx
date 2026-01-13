@@ -33,15 +33,29 @@ if (isWeb && 'serviceWorker' in navigator) {
     // @ts-ignore - BASE_URL est défini par Vite
     const baseUrl = import.meta.env.BASE_URL || '/souda/'
     const swPath = baseUrl + 'sw.js'
-    navigator.serviceWorker.register(swPath)
-      .then((registration) => {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('✅ Service Worker enregistré:', registration.scope)
-        }
+    
+    // Désinscrire tous les anciens service workers avant d'enregistrer le nouveau
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+      registrations.forEach((registration) => {
+        registration.unregister()
       })
-      .catch((error) => {
-        console.warn('⚠️ Erreur enregistrement Service Worker:', error)
-      })
+      
+      // Attendre un peu puis enregistrer le nouveau
+      setTimeout(() => {
+        navigator.serviceWorker.register(swPath, { updateViaCache: 'none' })
+          .then((registration) => {
+            // Forcer la mise à jour immédiate
+            registration.update()
+            
+            if (process.env.NODE_ENV === 'development') {
+              console.log('✅ Service Worker enregistré:', registration.scope)
+            }
+          })
+          .catch((error) => {
+            console.warn('⚠️ Erreur enregistrement Service Worker:', error)
+          })
+      }, 100)
+    })
   })
 }
 
