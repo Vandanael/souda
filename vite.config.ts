@@ -1,9 +1,43 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { readFileSync, writeFileSync } from 'fs'
+import { resolve } from 'path'
+
+// Plugin pour corriger les types MIME sur GitHub Pages
+const fixMimeTypePlugin = () => {
+  return {
+    name: 'fix-mime-type',
+    writeBundle(options: any) {
+      if (options.dir) {
+        const indexPath = resolve(options.dir, 'index.html')
+        try {
+          let html = readFileSync(indexPath, 'utf-8')
+          // S'assurer que tous les scripts ont type="module" et crossorigin
+          html = html.replace(
+            /<script([^>]*?)src="([^"]*\.js)"([^>]*?)>/g,
+            (match, before, src, after) => {
+              let newAttrs = before + after
+              if (!newAttrs.includes('type=')) {
+                newAttrs = ' type="module"' + newAttrs
+              }
+              if (!newAttrs.includes('crossorigin')) {
+                newAttrs = newAttrs + ' crossorigin'
+              }
+              return `<script${newAttrs}src="${src}">`
+            }
+          )
+          writeFileSync(indexPath, html)
+        } catch (error) {
+          console.warn('Erreur lors de la modification du HTML:', error)
+        }
+      }
+    },
+  }
+}
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), fixMimeTypePlugin()],
   base: '/souda/', // GitHub Pages subpath (change to '/' if using custom domain)
   server: {
     fs: {

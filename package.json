@@ -10,7 +10,9 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
-    "deploy": "npm run build && gh-pages -d dist"
+    "deploy": "npm run build && gh-pages -d dist",
+    "deploy:netlify": "npm run build",
+    "deploy:vercel": "npm run build"
   },
   "dependencies": {
     "framer-motion": "^12.26.2",
