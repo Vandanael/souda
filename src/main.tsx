@@ -29,33 +29,39 @@ if (isWeb) {
 // Enregistrer le service worker
 if (isWeb && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    // Utiliser le base path pour GitHub Pages (/souda/)
+    // Désactiver complètement le service worker pour éviter les erreurs
+    // Désinscrire tous les anciens service workers
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+      registrations.forEach((registration) => {
+        registration.unregister().catch(() => {
+          // Ignorer les erreurs de désinscription
+        })
+      })
+    }).catch(() => {
+      // Ignorer les erreurs
+    })
+    
+    // Optionnel : Enregistrer le nouveau service worker (version minimale)
     // @ts-ignore - BASE_URL est défini par Vite
     const baseUrl = import.meta.env.BASE_URL || '/souda/'
     const swPath = baseUrl + 'sw.js'
     
-    // Désinscrire tous les anciens service workers avant d'enregistrer le nouveau
-    navigator.serviceWorker.getRegistrations().then((registrations) => {
-      registrations.forEach((registration) => {
-        registration.unregister()
+    // Enregistrer avec updateViaCache: 'none' pour forcer la mise à jour
+    navigator.serviceWorker.register(swPath, { updateViaCache: 'none' })
+      .then((registration) => {
+        // Forcer la mise à jour immédiate
+        registration.update()
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ Service Worker enregistré (version minimale):', registration.scope)
+        }
       })
-      
-      // Attendre un peu puis enregistrer le nouveau
-      setTimeout(() => {
-        navigator.serviceWorker.register(swPath, { updateViaCache: 'none' })
-          .then((registration) => {
-            // Forcer la mise à jour immédiate
-            registration.update()
-            
-            if (process.env.NODE_ENV === 'development') {
-              console.log('✅ Service Worker enregistré:', registration.scope)
-            }
-          })
-          .catch((error) => {
-            console.warn('⚠️ Erreur enregistrement Service Worker:', error)
-          })
-      }, 100)
-    })
+      .catch((error) => {
+        // Ignorer silencieusement les erreurs d'enregistrement
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('⚠️ Service Worker non disponible:', error)
+        }
+      })
   })
 }
 
