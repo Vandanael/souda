@@ -56,3 +56,6 @@ coverage
 *.tmp
 *.temp
 .cursor/
+
+# Documentation
+docs/
