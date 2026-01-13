@@ -26,45 +26,25 @@ if (isWeb) {
   }
 }
 
-// Enregistrer le service worker
+// Désactiver complètement le service worker pour éviter les problèmes de cache
 if (isWeb && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    // @ts-ignore - BASE_URL est défini par Vite
-    const baseUrl = import.meta.env.BASE_URL || '/souda/'
-    const swPath = baseUrl + 'sw.js'
-    
-    // D'abord, désinscrire tous les anciens service workers
+    // Désinscrire TOUS les service workers existants
     navigator.serviceWorker.getRegistrations().then((registrations) => {
-      // Désinscrire tous les anciens
-      return Promise.all(
-        registrations.map((registration) => registration.unregister())
-      )
-    }).then(() => {
-      // Attendre un peu pour que la désinscription soit complète
-      return new Promise(resolve => setTimeout(resolve, 100))
-    }).then(() => {
-      // Enregistrer le nouveau service worker avec updateViaCache: 'none'
-      return navigator.serviceWorker.register(swPath, { 
-        updateViaCache: 'none' 
+      registrations.forEach((registration) => {
+        registration.unregister().then((success) => {
+          if (success && process.env.NODE_ENV === 'development') {
+            console.log('✅ Service Worker désinscrit:', registration.scope)
+          }
+        }).catch((error) => {
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('⚠️ Erreur désinscription Service Worker:', error)
+          }
+        })
       })
-    }).then((registration) => {
-      // Forcer la mise à jour immédiate
-      registration.update()
-      
-      // Écouter les messages du service worker
-      navigator.serviceWorker.addEventListener('message', (event) => {
-        if (event.data && event.data.type === 'SW_ACTIVATED') {
-          // Le service worker est activé, recharger la page pour forcer le nouveau cache
-          window.location.reload()
-        }
-      })
-      
-      if (process.env.NODE_ENV === 'development') {
-        console.log('✅ Service Worker enregistré:', registration.scope)
-      }
     }).catch((error) => {
       if (process.env.NODE_ENV === 'development') {
-        console.warn('⚠️ Service Worker non disponible:', error)
+        console.warn('⚠️ Erreur récupération Service Workers:', error)
       }
     })
   })
