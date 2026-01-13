@@ -38,7 +38,7 @@ const fixMimeTypePlugin = () => {
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react(), fixMimeTypePlugin()],
-  base: '/souda/', // GitHub Pages subpath (change to '/' if using custom domain)
+  base: process.env.NETLIFY ? '/' : '/souda/', // '/' pour Netlify, '/souda/' pour GitHub Pages
   server: {
     fs: {
       strict: false,
