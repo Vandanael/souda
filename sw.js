@@ -1,38 +1,7 @@
 // Service Worker pour SOUDA
-// Filtre les requêtes non-HTTP(S) pour éviter les erreurs de cache
+// Version minimale qui filtre uniquement les requêtes non-HTTP(S)
 
-const CACHE_NAME = 'souda-v1'
-const BASE_PATH = '/souda/' // GitHub Pages subpath
-
-// Fonction pour normaliser les URLs avec le base path
-function normalizeUrl(url) {
-  if (url.startsWith(BASE_PATH)) {
-    return url
-  }
-  if (url.startsWith('/')) {
-    return BASE_PATH + url.slice(1)
-  }
-  return url
-}
-
-const urlsToCache = [
-  BASE_PATH,
-  BASE_PATH + 'index.html'
-]
-
-// Installation - Cache les ressources initiales
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        return cache.addAll(urlsToCache.map(url => new Request(url, { mode: 'no-cors' })))
-          .catch((err) => {
-            console.warn('Service Worker: Erreur lors du cache initial:', err)
-          })
-      })
-  )
-  self.skipWaiting()
-})
+const CACHE_NAME = 'souda-v3' // Version incrémentée pour forcer la mise à jour
 
 // Activation - Nettoie les anciens caches
 self.addEventListener('activate', (event) => {
@@ -40,9 +9,8 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName)
-          }
+          // Supprimer TOUS les anciens caches
+          return caches.delete(cacheName)
         })
       )
     })
@@ -50,77 +18,27 @@ self.addEventListener('activate', (event) => {
   return self.clients.claim()
 })
 
-// Fetch - Stratégie Cache First avec filtre des schémas non-HTTP(S)
+// Fetch - Filtrer UNIQUEMENT les requêtes non-HTTP(S), laisser tout le reste passer
 self.addEventListener('fetch', (event) => {
   const request = event.request
   
-  // Filtrer les requêtes non-HTTP(S) (chrome-extension, moz-extension, etc.)
+  // Filtrer IMMÉDIATEMENT les requêtes non-HTTP(S) AVANT toute opération
   try {
     const url = new URL(request.url)
     
-    // Ignorer les requêtes avec des schémas non-HTTP(S)
+    // Ignorer TOUTES les requêtes avec des schémas non-HTTP(S)
+    // (chrome-extension, moz-extension, etc.)
     if (!url.protocol.startsWith('http')) {
-      // Ignorer silencieusement les requêtes non-HTTP(S)
-      return
-    }
-    
-    // Ignorer les requêtes cross-origin non-CORS
-    if (url.origin !== self.location.origin && request.mode === 'no-cors') {
+      // Ne pas appeler event.respondWith() pour ces requêtes
+      // Laisser le navigateur gérer normalement (ou les ignorer)
       return
     }
   } catch (error) {
-    // Si l'URL est invalide, ignorer la requête
+    // Si l'URL est invalide, ne pas intercepter
     return
   }
   
-  event.respondWith(
-    caches.match(request)
-      .then((response) => {
-        // Retourner depuis le cache si disponible
-        if (response) {
-          return response
-        }
-        
-        // Sinon, fetch depuis le réseau
-        return fetch(request)
-          .then((response) => {
-            // Vérifier que la réponse est valide
-            if (!response || response.status !== 200 || response.type === 'error') {
-              return response
-            }
-            
-            // Cloner la réponse pour le cache
-            const responseToCache = response.clone()
-            
-            // Mettre en cache uniquement les requêtes GET et HTTP(S)
-            if (request.method === 'GET') {
-              try {
-                const url = new URL(request.url)
-                if (url.protocol.startsWith('http')) {
-                  caches.open(CACHE_NAME)
-                    .then((cache) => {
-                      try {
-                        cache.put(request, responseToCache)
-                      } catch (error) {
-                        // Ignorer les erreurs de cache (ex: schéma non supporté)
-                        // Ne pas logger pour éviter le spam dans la console
-                      }
-                    })
-                    .catch(() => {
-                      // Ignorer silencieusement les erreurs
-                    })
-                }
-              } catch (error) {
-                // Ignorer silencieusement les erreurs d'URL
-              }
-            }
-            
-            return response
-          })
-          .catch((error) => {
-            // Retourner une réponse depuis le cache en cas d'erreur réseau
-            return caches.match(request)
-          })
-      })
-  )
+  // Pour toutes les autres requêtes HTTP(S), laisser passer normalement
+  // Ne pas intercepter avec event.respondWith() pour éviter tout problème de cache
+  // Le navigateur gérera les requêtes normalement
 })
