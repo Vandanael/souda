@@ -115,9 +115,7 @@ export default function StartScreen() {
         maxWidth: '400px',
         lineHeight: '1.6'
       }}>
-        "Tu es un déserteur qui pille les ruines d'une guerre oubliée.
-        <br />
-        20 jours pour rembourser tes dettes ou mourir."
+        "Bourg-Creux. Des murs. Un toit. Ça fera l'affaire. Pour l'instant."
       </div>
       
       <div style={{
@@ -132,10 +130,10 @@ export default function StartScreen() {
           Règles du jeu
         </div>
         <div style={{ fontSize: '0.85rem', color: '#ccc', lineHeight: '1.6', textAlign: 'left' }}>
-          • Survie 20 jours<br />
-          • Rembourse 80💰 de dette (+5💰/jour intérêts)<br />
-          • Mort en combat = fin de partie<br />
-          • Chaque run compte
+          <strong style={{ color: '#ca8' }}>Exploration :</strong> Pille les ruines, trouve de l'or et des équipements<br />
+          <strong style={{ color: '#ca8' }}>Combat :</strong> Perdre un combat signifie la mort définitive<br />
+          <strong style={{ color: '#ca8' }}>Dette :</strong> Rembourse Morten avant le 20ème jour<br />
+          <strong style={{ color: '#ca8' }}>Progression :</strong> Même en perdant, tu gagnes de l'XP pour débloquer de nouveaux contenus
         </div>
       </div>
       
@@ -282,25 +280,24 @@ export default function StartScreen() {
               marginBottom: '1.5rem'
             }}>
               <div style={{ marginBottom: '1rem' }}>
-                <strong style={{ color: '#ca8' }}>Objectif :</strong> Survivez 20 jours et remboursez 80💰 de dette (+5💰/jour d'intérêts).
+                <strong style={{ color: '#ca8' }}>Le défi :</strong> Tu dois rembourser ta dette à Morten avant le 20ème jour. Chaque jour, les intérêts augmentent de 5💰.
               </div>
               
               <div style={{ marginBottom: '1rem' }}>
-                <strong style={{ color: '#ca8' }}>Chaque jour :</strong>
+                <strong style={{ color: '#ca8' }}>Chaque jour à Bourg-Creux :</strong>
                 <ul style={{ marginTop: '0.5rem', paddingLeft: '1.5rem' }}>
-                  <li>Explorez les lieux pour trouver de l'or et des objets</li>
-                  <li>Vendez au marché pour gagner de l'or</li>
-                  <li>Remboursez votre dette à l'usurier</li>
-                  <li>Mangez à la taverne pour éviter les pénalités</li>
+                  <li><strong>Aube :</strong> Équipe-toi, vends tes trouvailles au Marché aux Charognes, mange à la Taverne du Pendu</li>
+                  <li><strong>Journée :</strong> Explore 5 lieux avec 3 actions (ruines, champs de bataille, monastères pillés...)</li>
+                  <li><strong>Crépuscule :</strong> Les intérêts de la dette s'ajoutent. Rembourse Morten si tu peux.</li>
                 </ul>
               </div>
               
               <div style={{ marginBottom: '1rem' }}>
-                <strong style={{ color: '#ca8' }}>Combat :</strong> Si vous perdez un combat, c'est la fin de partie. Équipez-vous bien avant d'explorer.
+                <strong style={{ color: '#ca8' }}>Le danger :</strong> Perdre un combat signifie la mort définitive. Équipe-toi bien avant d'explorer les lieux risqués.
               </div>
               
               <div style={{ marginBottom: '1rem' }}>
-                <strong style={{ color: '#ca8' }}>Progression :</strong> Même en perdant, vous gagnez de l'XP méta pour débloquer de nouveaux contenus.
+                <strong style={{ color: '#ca8' }}>La progression :</strong> Même en perdant, chaque run te rapporte de l'XP méta pour débloquer de nouvelles origines, équipements et événements.
               </div>
             </div>
             

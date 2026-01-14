@@ -6,13 +6,13 @@ interface NarrativeIntroProps {
 }
 
 const INTRO_TEXTS = [
-  "La bataille est perdue.",
-  "Vos compagnons sont morts.",
-  "Vous fuyez dans la nuit...",
-  "Tu es un déserteur.",
-  "Tu dois 80 pièces d'or à Morten.",
-  "Tu as 20 jours.",
-  "PAYE... OU MEURS."
+  "La guerre est finie depuis longtemps.",
+  "Les armées ont disparu.",
+  "Il ne reste que les ruines...",
+  "Et ceux qui les pillent.",
+  "Tu es arrivé à Bourg-Creux.",
+  "Un refuge pour les perdants.",
+  "Morten t'a trouvé."
 ]
 
 export default function NarrativeIntro({ onComplete }: NarrativeIntroProps) {
@@ -162,7 +162,7 @@ export default function NarrativeIntro({ onComplete }: NarrativeIntroProps) {
               marginBottom: '1rem',
               color: '#ca8'
             }}>
-              Morten
+              Morten l'Usurier
             </div>
             
             <div style={{
@@ -171,11 +171,15 @@ export default function NarrativeIntro({ onComplete }: NarrativeIntroProps) {
               marginBottom: '1.5rem',
               color: '#ddd'
             }}>
-              "Ah, un autre rat qui fuit le navire..."
+              "Bienvenue à Bourg-Creux, déserteur."
               <br /><br />
-              "Je peux te cacher. Mais rien n'est gratuit."
+              "Ici, on survit. On pille les ruines. On rembourse ses dettes."
               <br /><br />
-              "Tu me dois 80 pièces d'or. Tu as 20 jours."
+              "Tu me dois 80 pièces d'or. Tu as 20 jours pour me payer."
+              <br /><br />
+              <span style={{ color: '#c44', fontWeight: 'bold' }}>
+                "Chaque jour qui passe, ta dette grandit."
+              </span>
             </div>
             
             <motion.div
@@ -186,11 +190,11 @@ export default function NarrativeIntro({ onComplete }: NarrativeIntroProps) {
                 fontSize: '1.5rem',
                 fontWeight: 'bold',
                 color: '#c44',
-                marginBottom: '1rem',
+                marginBottom: '0.5rem',
                 textAlign: 'center'
               }}
             >
-              Dette : 80💰
+              80💰 aujourd'hui
             </motion.div>
             
             <div style={{
@@ -200,7 +204,7 @@ export default function NarrativeIntro({ onComplete }: NarrativeIntroProps) {
               textAlign: 'center',
               marginBottom: '2rem'
             }}>
-              Chaque jour, les intérêts augmentent...
+              +5💰 d'intérêts chaque jour
             </div>
 
             {/* Bouton qui apparaît après le dialogue */}
@@ -239,7 +243,7 @@ export default function NarrativeIntro({ onComplete }: NarrativeIntroProps) {
                 e.currentTarget.style.boxShadow = 'none'
               }}
             >
-              COMMENCER MA DETTE
+              COMMENCER
             </motion.button>
           </motion.div>
         )}

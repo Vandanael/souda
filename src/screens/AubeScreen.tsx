@@ -9,6 +9,7 @@ import DailyObjectives from '../components/DailyObjectives'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { useButtonProtection } from '../hooks/useDebounce'
 import CompactHUD from '../components/CompactHUD'
+import HubDrawer from '../components/HubDrawer'
 
 export default function AubeScreen() {
   const { playerStats, equipment, goToExploration, openInventory } = useGameStore()
@@ -16,6 +17,7 @@ export default function AubeScreen() {
   const isMobile = useIsMobile()
   const [isNavigating, setIsNavigating] = useState(false)
   const [showWarning, setShowWarning] = useState(false)
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   
   const openMarche = () => {
     playSound('ui_open')
@@ -39,6 +41,24 @@ export default function AubeScreen() {
     playSound('ui_open')
     playHaptic('button_press')
     openInventory()
+  }
+
+  const openForge = () => {
+    playSound('ui_open')
+    playHaptic('button_press')
+    useGameStore.setState({ phase: 'forge' })
+  }
+
+  const openTaverne = () => {
+    playSound('ui_open')
+    playHaptic('button_press')
+    useGameStore.setState({ phase: 'taverne' })
+  }
+
+  const toggleDrawer = () => {
+    playSound('ui_open')
+    playHaptic('button_press')
+    setIsDrawerOpen(!isDrawerOpen)
   }
   
   const handleGoToExplorationBase = () => {
@@ -84,9 +104,10 @@ export default function AubeScreen() {
       <div style={{
         display: 'flex',
         flexDirection: 'column',
-        gap: '2rem',
+        gap: isMobile ? '1.5rem' : '2rem',
         flex: 1,
-        padding: '1rem',
+        padding: isMobile ? '0.75rem' : '1rem',
+        paddingBottom: isMobile ? '1rem' : '1rem',
         overflowY: 'auto',
         justifyContent: 'center'
       }}>
@@ -167,111 +188,173 @@ export default function AubeScreen() {
       </div>
       
       <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '0.75rem' : '1rem' }}>
-        <div style={{ display: 'flex', gap: isMobile ? '0.5rem' : '1rem', flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
-          <button
-            onClick={handleOpenInventory}
-            style={{
-              fontSize: isMobile ? '1rem' : '1rem',
-              padding: isMobile ? '1rem' : '1rem',
-              minHeight: isMobile ? '48px' : '44px',
-              flex: 1,
-              minWidth: isMobile ? 'calc(50% - 0.25rem)' : 'auto'
-            }}
-          >
-            INVENTAIRE
-          </button>
-          <button
-            onClick={openMarche}
-            style={{
-              fontSize: isMobile ? '1rem' : '1rem',
-              padding: isMobile ? '1rem' : '1rem',
-              minHeight: isMobile ? '48px' : '44px',
-              flex: 1,
-              minWidth: isMobile ? 'calc(50% - 0.25rem)' : 'auto'
-            }}
-          >
-            MARCHÉ
-          </button>
-        </div>
-        
-        <div style={{ display: 'flex', gap: isMobile ? '0.5rem' : '1rem', flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
-          <button
-            onClick={openMorten}
-            style={{
-              fontSize: isMobile ? '1rem' : '1rem',
-              padding: isMobile ? '1rem' : '1rem',
-              minHeight: isMobile ? '48px' : '44px',
-              flex: 1,
-              minWidth: isMobile ? 'calc(50% - 0.25rem)' : 'auto'
-            }}
-          >
-            USURIER
-          </button>
-          <button
-            onClick={() => {
-              playSound('ui_open')
-              playHaptic('button_press')
-              useGameStore.setState({ phase: 'forge' })
-            }}
-            style={{
-              fontSize: isMobile ? '1rem' : '1rem',
-              padding: isMobile ? '1rem' : '1rem',
-              minHeight: isMobile ? '48px' : '44px',
-              flex: 1,
-              minWidth: isMobile ? 'calc(50% - 0.25rem)' : 'auto'
-            }}
-          >
-            FORGE
-          </button>
-        </div>
-        
-        <div style={{ display: 'flex', gap: isMobile ? '0.5rem' : '1rem', flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
-          <button
-            onClick={() => {
-              playSound('ui_open')
-              playHaptic('button_press')
-              useGameStore.setState({ phase: 'taverne' })
-            }}
-            style={{
-              fontSize: isMobile ? '1rem' : '1rem',
-              padding: isMobile ? '1rem' : '1rem',
-              minHeight: isMobile ? '48px' : '44px',
-              flex: isMobile ? '1 1 100%' : 1,
-              minWidth: isMobile ? '100%' : 'auto'
-            }}
-          >
-            TAVERNE
-          </button>
-          <button
-            onClick={openSettings}
-            style={{
-              fontSize: isMobile ? '0.9rem' : '1.1rem',
-              padding: isMobile ? '0.875rem 1rem' : '0.75rem 1.5rem',
-              minHeight: isMobile ? '48px' : '44px',
-              background: '#2a2a2a',
-              border: '2px solid #444',
-              flex: isMobile ? '1 1 calc(50% - 0.25rem)' : 'none'
-            }}
-          >
-            PARAMÈTRES
-          </button>
-          <button
-            onClick={handleGoToExploration}
-            disabled={isExplorationDisabled || isNavigating}
-            style={{
-              fontSize: isMobile ? '1rem' : '1.1rem',
-              padding: isMobile ? '1rem' : '1rem',
-              minHeight: isMobile ? '48px' : '44px',
-              flex: isMobile ? '1 1 100%' : 2,
-              opacity: (isExplorationDisabled || isNavigating) ? 0.6 : 1,
-              cursor: (isExplorationDisabled || isNavigating) ? 'not-allowed' : 'pointer'
-            }}
-          >
-            {isNavigating ? 'CHARGEMENT...' : 'PARTIR EN MISSION →'}
-          </button>
-        </div>
+        {isMobile ? (
+          // Version mobile : menu hamburger + bouton principal
+          <>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'stretch' }}>
+              <button
+                onClick={toggleDrawer}
+                style={{
+                  fontSize: '1rem',
+                  padding: '1rem',
+                  minHeight: '48px',
+                  flex: 1,
+                  background: '#2a2a2a',
+                  border: '2px solid #555',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem'
+                }}
+              >
+                <span style={{ fontSize: '1.2rem' }}>☰</span>
+                <span>MENU</span>
+              </button>
+              <button
+                onClick={openSettings}
+                style={{
+                  fontSize: '0.9rem',
+                  padding: '0.875rem 1rem',
+                  minHeight: '48px',
+                  minWidth: '48px',
+                  background: '#2a2a2a',
+                  border: '2px solid #444',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+                title="Paramètres"
+              >
+                ⚙️
+              </button>
+            </div>
+            <button
+              onClick={handleGoToExploration}
+              disabled={isExplorationDisabled || isNavigating}
+              style={{
+                fontSize: '1.1rem',
+                padding: '1.25rem',
+                minHeight: '56px',
+                width: '100%',
+                background: (isExplorationDisabled || isNavigating) ? '#444' : '#4a4',
+                border: '2px solid ' + ((isExplorationDisabled || isNavigating) ? '#666' : '#6a6'),
+                color: '#fff',
+                fontWeight: 'bold',
+                opacity: (isExplorationDisabled || isNavigating) ? 0.6 : 1,
+                cursor: (isExplorationDisabled || isNavigating) ? 'not-allowed' : 'pointer',
+                boxShadow: (isExplorationDisabled || isNavigating) ? 'none' : '0 2px 8px rgba(74, 164, 74, 0.3)'
+              }}
+            >
+              {isNavigating ? 'CHARGEMENT...' : 'PARTIR EN MISSION →'}
+            </button>
+          </>
+        ) : (
+          // Version desktop : tous les boutons visibles
+          <>
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'nowrap' }}>
+              <button
+                onClick={handleOpenInventory}
+                style={{
+                  fontSize: '1rem',
+                  padding: '1rem',
+                  minHeight: '44px',
+                  flex: 1
+                }}
+              >
+                INVENTAIRE
+              </button>
+              <button
+                onClick={openMarche}
+                style={{
+                  fontSize: '1rem',
+                  padding: '1rem',
+                  minHeight: '44px',
+                  flex: 1
+                }}
+              >
+                MARCHÉ
+              </button>
+            </div>
+            
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'nowrap' }}>
+              <button
+                onClick={openMorten}
+                style={{
+                  fontSize: '1rem',
+                  padding: '1rem',
+                  minHeight: '44px',
+                  flex: 1
+                }}
+              >
+                USURIER
+              </button>
+              <button
+                onClick={openForge}
+                style={{
+                  fontSize: '1rem',
+                  padding: '1rem',
+                  minHeight: '44px',
+                  flex: 1
+                }}
+              >
+                FORGE
+              </button>
+            </div>
+            
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'nowrap' }}>
+              <button
+                onClick={openTaverne}
+                style={{
+                  fontSize: '1rem',
+                  padding: '1rem',
+                  minHeight: '44px',
+                  flex: 1
+                }}
+              >
+                TAVERNE
+              </button>
+              <button
+                onClick={openSettings}
+                style={{
+                  fontSize: '1.1rem',
+                  padding: '0.75rem 1.5rem',
+                  minHeight: '44px',
+                  background: '#2a2a2a',
+                  border: '2px solid #444'
+                }}
+              >
+                PARAMÈTRES
+              </button>
+              <button
+                onClick={handleGoToExploration}
+                disabled={isExplorationDisabled || isNavigating}
+                style={{
+                  fontSize: '1.1rem',
+                  padding: '1rem',
+                  minHeight: '44px',
+                  flex: 2,
+                  opacity: (isExplorationDisabled || isNavigating) ? 0.6 : 1,
+                  cursor: (isExplorationDisabled || isNavigating) ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {isNavigating ? 'CHARGEMENT...' : 'PARTIR EN MISSION →'}
+              </button>
+            </div>
+          </>
+        )}
       </div>
       </div>
+      
+      {/* Drawer pour les boutons secondaires sur mobile */}
+      <HubDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        onInventory={handleOpenInventory}
+        onMarche={openMarche}
+        onMorten={openMorten}
+        onForge={openForge}
+        onTaverne={openTaverne}
+      />
       
       {/* Modal de warning si stats trop faibles */}
       <AnimatePresence>
