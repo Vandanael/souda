@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { useMetaProgressionStore, getXPProgress } from '../store/metaProgression'
 
 interface MetaProgressionDisplayProps {
@@ -154,139 +154,39 @@ export default function MetaProgressionDisplay({
         </div>
       </div>
       
-      {/* Pop-up Level Up */}
-      <AnimatePresence>
-        {showLevelUp && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ duration: 0.5, type: 'spring' }}
-            style={{
-              position: 'fixed',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              background: 'linear-gradient(135deg, #2c3e50 0%, #1a1a2e 100%)',
-              border: '3px solid #f39c12',
-              borderRadius: '12px',
-              padding: '2rem',
-              maxWidth: '400px',
-              width: '90%',
-              zIndex: 10002,
-              boxShadow: '0 10px 40px rgba(0,0,0,0.8)',
-              textAlign: 'center'
-            }}
-            onClick={() => setShowLevelUp(false)}
-          >
-            <motion.div
-              animate={{ 
-                scale: [1, 1.1, 1],
-                rotate: [0, 5, -5, 0]
-              }}
-              transition={{ 
-                duration: 0.6,
-                repeat: Infinity,
-                repeatType: 'reverse' as const
-              }}
-              style={{
-                fontSize: '3rem',
-                marginBottom: '1rem'
-              }}
-            >
-              🎉
-            </motion.div>
-            
-            <div style={{
-              fontSize: '1.8rem',
-              fontWeight: 'bold',
-              color: '#f39c12',
-              marginBottom: '1rem',
-              textShadow: '0 0 10px rgba(243, 156, 18, 0.5)'
-            }}>
-              NIVEAU {currentLevel} ATTEINT !
-            </div>
-            
-            {unlockedContent.length > 0 && (
-              <div style={{
-                marginTop: '1.5rem',
-                paddingTop: '1.5rem',
-                borderTop: '1px solid #555'
-              }}>
-                <div style={{
-                  fontSize: '1.2rem',
-                  fontWeight: 'bold',
-                  color: '#2ecc71',
-                  marginBottom: '1rem'
-                }}>
-                  NOUVEAU CONTENU DÉBLOQUÉ
+      {/* Level up info (sans modal) */}
+      {showLevelUp && unlockedContent.length > 0 && (
+        <div style={{
+          marginTop: '1rem',
+          padding: '0.75rem',
+          background: 'rgba(46, 204, 113, 0.1)',
+          border: '1px solid #2ecc71',
+          borderRadius: '6px',
+          fontSize: '0.9rem',
+          color: '#2ecc71'
+        }}>
+          <div style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>
+            Niveau {currentLevel} - Nouveau contenu débloqué
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {unlockedContent.map((unlock, index) => {
+              const isOrigin = unlock.startsWith('origin:')
+              const isItem = unlock.startsWith('item:')
+              const name = isOrigin 
+                ? unlock.replace('origin:', '').charAt(0).toUpperCase() + unlock.replace('origin:', '').slice(1)
+                : isItem
+                ? unlock.replace('item:', '').replace(/_/g, ' ').toUpperCase()
+                : unlock
+              
+              return (
+                <div key={index}>
+                  {isOrigin ? `Origine : ${name}` : `Item : ${name}`}
                 </div>
-                
-                <div style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '0.75rem'
-                }}>
-                  {unlockedContent.map((unlock, index) => {
-                    const isOrigin = unlock.startsWith('origin:')
-                    const isItem = unlock.startsWith('item:')
-                    const name = isOrigin 
-                      ? unlock.replace('origin:', '').charAt(0).toUpperCase() + unlock.replace('origin:', '').slice(1)
-                      : isItem
-                      ? unlock.replace('item:', '').replace(/_/g, ' ').toUpperCase()
-                      : unlock
-                    
-                    return (
-                      <motion.div
-                        key={index}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        style={{
-                          background: 'rgba(46, 204, 113, 0.2)',
-                          border: '1px solid #2ecc71',
-                          borderRadius: '6px',
-                          padding: '0.75rem',
-                          fontSize: '1rem',
-                          color: '#2ecc71'
-                        }}
-                      >
-                        {isOrigin ? `Origine : ${name}` : `Item : ${name}`}
-                      </motion.div>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-            
-            <button
-              onClick={() => setShowLevelUp(false)}
-              style={{
-                marginTop: '1.5rem',
-                padding: '0.75rem 2rem',
-                fontSize: '1.1rem',
-                fontWeight: 'bold',
-                background: '#f39c12',
-                border: 'none',
-                borderRadius: '6px',
-                color: '#000',
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#e67e22'
-                e.currentTarget.style.transform = 'scale(1.05)'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = '#f39c12'
-                e.currentTarget.style.transform = 'scale(1)'
-              }}
-            >
-              CONTINUER
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              )
+            })}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

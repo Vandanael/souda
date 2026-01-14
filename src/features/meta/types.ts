@@ -23,6 +23,8 @@ export interface ArchivedRun {
     humanite: number
     pragmatisme: number
   }
+  relicFragments?: Record<string, number> // Fragments collectés dans cette run
+  relicsCount?: number // Nombre de reliques possédées à la fin
 }
 
 export interface GlobalStats {

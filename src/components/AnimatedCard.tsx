@@ -1,33 +1,39 @@
 /**
  * Card avec animation au hover/touch
+ * Migré pour utiliser le nouveau composant Card du design system
  */
 
-import { motion } from 'framer-motion'
 import { ReactNode } from 'react'
+import { Card } from './design/Card'
+import type { SurfaceLevel, CardVariant } from '../design/types'
 
 interface AnimatedCardProps {
   children: ReactNode
   onClick?: () => void
   style?: React.CSSProperties
+  surface?: SurfaceLevel
+  variant?: CardVariant
+  equipped?: boolean
 }
 
-export default function AnimatedCard({ children, onClick, style }: AnimatedCardProps) {
+export default function AnimatedCard({
+  children,
+  onClick,
+  style,
+  surface = 'L1',
+  variant = 'default',
+  equipped = false,
+}: AnimatedCardProps) {
   return (
-    <motion.div
-      whileHover={onClick ? { y: -2, boxShadow: '0 4px 12px rgba(0,0,0,0.3)' } : {}}
-      whileTap={onClick ? { scale: 0.98 } : {}}
-      transition={{ duration: 0.2 }}
+    <Card
+      variant={variant}
+      surface={surface}
+      interactive={!!onClick}
+      equipped={equipped}
       onClick={onClick}
-      style={{
-        background: '#2a2a2a',
-        border: '2px solid #555',
-        borderRadius: '8px',
-        padding: '1rem',
-        cursor: onClick ? 'pointer' : 'default',
-        ...style
-      }}
+      style={style}
     >
       {children}
-    </motion.div>
+    </Card>
   )
 }

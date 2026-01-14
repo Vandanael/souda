@@ -135,18 +135,35 @@ function generateDurability(
 }
 
 /**
+ * Applique le scaling de valeur d'item selon le jour
+ * @param item Item de base
+ * @param day Jour actuel
+ * @returns Item avec valeur scalée
+ */
+export function scaleItemValue(item: Item, day: number): Item {
+  const scalingFactor = 1 + ((day - 1) * 0.1) // +10% par jour (J1 = 1.0, J2 = 1.1, J10 = 1.9)
+  
+  return {
+    ...item,
+    value: Math.round(item.value * scalingFactor)
+  }
+}
+
+/**
  * Génère un item de loot procédural
  * @param locationRisk Niveau de risque du lieu (1-4)
  * @param itemPool Pool d'items disponibles (par défaut BASE_ITEMS)
  * @param random Générateur aléatoire (optionnel, pour tests)
  * @param rumorBonus Si true, augmente les probabilités de rares/légendaires (optionnel)
+ * @param day Jour actuel (pour scaling, par défaut 1)
  * @returns Item généré
  */
 export function generateLoot(
   locationRisk: number,
   itemPool: Item[] = BASE_ITEMS,
   random?: SeededRandom,
-  rumorBonus?: boolean
+  rumorBonus?: boolean,
+  day: number = 1
 ): Item {
   // 1. Déterminer rareté selon probabilités ajustées par risque
   let probabilities = getRarityProbabilities(locationRisk)
@@ -218,6 +235,9 @@ export function generateLoot(
   if (rarity === 'rare' || rarity === 'legendary') {
     newItem = addSpecialProperty(newItem, random)
   }
+  
+  // 6. Appliquer scaling de valeur selon le jour
+  newItem = scaleItemValue(newItem, day)
   
   return newItem
 }

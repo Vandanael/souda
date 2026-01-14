@@ -80,8 +80,29 @@ export const ENEMIES: Record<EnemyType, Enemy> = {
   }
 }
 
+/**
+ * Applique le scaling des stats d'ennemi selon le jour
+ * @param enemy Ennemi de base
+ * @param day Jour actuel
+ * @returns Ennemi avec stats scalées
+ */
+export function scaleEnemyStats(enemy: Enemy, day: number): Enemy {
+  const scalingFactor = day - 1 // J1 = 0, J2 = 1, etc.
+  
+  return {
+    ...enemy,
+    atk: Math.round(enemy.atk + scalingFactor * 0.9),  // +0.9 ATK par jour
+    def: Math.round(enemy.def + scalingFactor * 0.8),  // +0.8 DEF par jour
+    vit: Math.round(enemy.vit + scalingFactor * 0.3),  // +0.3 VIT par jour
+    lootGold: {
+      min: Math.round(enemy.lootGold.min + scalingFactor * 0.5),  // +0.5💰 min par jour
+      max: Math.round(enemy.lootGold.max + scalingFactor * 1.0)    // +1.0💰 max par jour
+    }
+  }
+}
+
 // Sélection aléatoire d'ennemi selon le risque du lieu
-export function getRandomEnemy(riskLevel: number): Enemy {
+export function getRandomEnemy(riskLevel: number, day: number = 1): Enemy {
   const risk = Math.min(5, Math.max(1, riskLevel))
   
   // Probabilités selon le risque
@@ -100,5 +121,8 @@ export function getRandomEnemy(riskLevel: number): Enemy {
   }
   
   const randomType = enemyPool[Math.floor(Math.random() * enemyPool.length)]
-  return ENEMIES[randomType]
+  const baseEnemy = ENEMIES[randomType]
+  
+  // Appliquer le scaling selon le jour
+  return scaleEnemyStats(baseEnemy, day)
 }

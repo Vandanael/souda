@@ -64,11 +64,22 @@ export class GameManager {
   } {
     const newDay = currentDay + 1
     
+    // Intérêts progressifs selon le jour
+    let interest: number
+    if (newDay <= 5) {
+      interest = BALANCE_CONFIG.economy.progressiveInterest.day1to5
+    } else if (newDay <= 10) {
+      interest = BALANCE_CONFIG.economy.progressiveInterest.day6to10
+    } else if (newDay <= 15) {
+      interest = BALANCE_CONFIG.economy.progressiveInterest.day11to15
+    } else {
+      interest = BALANCE_CONFIG.economy.progressiveInterest.day16to20
+    }
+    
     // P0.3 - Système de sécurité : Si dette > 150💰 au J15+, réduire intérêts à 3💰/jour
-    // (Ajusté car intérêts maintenant à 5💰 au lieu de 3.5💰)
-    let interest = BALANCE_CONFIG.economy.dailyInterest
-    if (newDay >= 15 && currentDebt > 150) {
-      interest = 3 // Réduction de sécurité (au lieu de 2 avec anciens intérêts)
+    // (Désactivé avec intérêts progressifs, mais gardé comme fallback)
+    if (newDay >= 15 && currentDebt > 150 && interest > 3) {
+      interest = 3 // Réduction de sécurité
     }
     
     const newDebt = currentDebt + interest

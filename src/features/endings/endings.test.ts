@@ -23,6 +23,8 @@ function createGameState(overrides: Partial<GameState>): GameState {
     recentMonologues: [],
     characterArcs: {},
     selectedOrigin: 'deserteur',
+    relics: [],
+    relicFragments: {},
     equipment: {},
     inventory: [],
     playerStats: { atk: 10, def: 10, vit: 10 },
@@ -203,7 +205,32 @@ describe('Endings Logic', () => {
           gold: 0,
           durabilityLoss: [],
           lootEarned: false,
-          message: 'Tu es mort'
+          message: 'Tu es mort',
+          breakdown: {
+            player: {
+              atkContribution: 5,
+              defContribution: 3,
+              vitContribution: 2,
+              base: 10,
+              randomRoll: 0,
+              total: 10
+            },
+            enemy: {
+              atkContribution: 15,
+              defContribution: 10,
+              vitContribution: 5,
+              base: 30,
+              randomRoll: 0,
+              total: 30
+            },
+            ratio: 0.3,
+            thresholds: {
+              crushing: 1.5,
+              victory: 1.0,
+              costly: 0.7,
+              flee: 0.5
+            }
+          }
         },
         currentEnemy: {
           id: 'bandit',
@@ -289,7 +316,32 @@ describe('Endings Logic', () => {
           gold: 0,
           durabilityLoss: [],
           lootEarned: false,
-          message: 'Tu es mort'
+          message: 'Tu es mort',
+          breakdown: {
+            player: {
+              atkContribution: 5,
+              defContribution: 3,
+              vitContribution: 2,
+              base: 10,
+              randomRoll: 0,
+              total: 10
+            },
+            enemy: {
+              atkContribution: 15,
+              defContribution: 10,
+              vitContribution: 5,
+              base: 30,
+              randomRoll: 0,
+              total: 30
+            },
+            ratio: 0.3,
+            thresholds: {
+              crushing: 1.5,
+              victory: 1.0,
+              costly: 0.7,
+              flee: 0.5
+            }
+          }
         },
         currentEnemy: {
           id: 'bandit',

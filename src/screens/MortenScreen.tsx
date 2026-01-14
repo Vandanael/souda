@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { useGameStore } from '../store/gameStore'
 import CharacterArcIndicator from '../components/CharacterArcIndicator'
 import { useScreenShake } from '../hooks/useScreenShake'
+import { MORTEN_ARC_CONFIG } from '../features/narrative/characterArcs'
 
 export default function MortenScreen() {
   const { debt, gold, repayDebt, closeInventory, setNPCFlag, npcFlags, day, getCharacterArc } = useGameStore()
@@ -64,7 +65,6 @@ export default function MortenScreen() {
     }
     
     // Utiliser les dialogues de l'arc narratif selon le stage
-    const { MORTEN_ARC_CONFIG } = require('../features/narrative/characterArcs')
     const stageDialogues = MORTEN_ARC_CONFIG.dialogues[storyStage as keyof typeof MORTEN_ARC_CONFIG.dialogues] || []
     
     // Sélectionner un dialogue aléatoire basé sur le jour pour la cohérence
@@ -120,12 +120,22 @@ export default function MortenScreen() {
         }}>
           ÉCHOPPE DE MORTEN
         </div>
-        <div style={{
-          fontSize: '1rem',
-          color: '#aaa'
-        }}>
-          Or : <span style={{ color: '#ca8', fontWeight: 'bold' }}>{gold}💰</span>
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{
+            fontSize: '1rem',
+            color: '#aaa'
+          }}
+        >
+          Or : <motion.span 
+            animate={{ scale: [1, 1.08, 1] }}
+            transition={{ repeat: 0, duration: 0.4 }}
+            style={{ color: '#ca8', fontWeight: 'bold' }}
+          >
+            {gold}💰
+          </motion.span>
+        </motion.div>
       </div>
       
       {/* Dette breakdown */}
@@ -365,7 +375,12 @@ export default function MortenScreen() {
               )}
             </div>
             <div style={{ fontSize: '0.9rem', color: '#aaa', marginTop: '0.25rem' }}>
-              Or restant : <span style={{ color: '#ca8' }}>{gold}💰</span>
+              Or restant : <motion.span 
+                animate={debtAnimation ? { scale: [1, 1.12, 1] } : {}}
+                style={{ color: '#ca8' }}
+              >
+                {gold}💰
+              </motion.span>
             </div>
           </motion.div>
         )}

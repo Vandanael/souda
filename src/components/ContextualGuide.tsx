@@ -82,7 +82,21 @@ export default function ContextualGuide({ phase }: ContextualGuideProps) {
   const [dismissedGuides, setDismissedGuides] = useState<Set<string>>(new Set())
   const state = useGameStore()
   
+  // Réinitialiser les guides dismissés quand on commence une nouvelle partie (jour 1)
   useEffect(() => {
+    if (state.day === 1 && state.phase === 'aube') {
+      setDismissedGuides(new Set())
+      setCurrentGuide(null)
+    }
+  }, [state.day, state.phase])
+  
+  useEffect(() => {
+    // Ne pas afficher de guides si on n'est pas en jeu (start, origin, etc.)
+    if (['start', 'origin', 'tutorial', 'settings', 'hallOfFame'].includes(phase)) {
+      setCurrentGuide(null)
+      return
+    }
+    
     // Trouver le guide approprié pour cette phase
     const availableGuide = GUIDE_STEPS.find(guide => {
       if (dismissedGuides.has(guide.id)) return false
@@ -151,7 +165,6 @@ export default function ContextualGuide({ phase }: ContextualGuideProps) {
             padding: '0',
             marginLeft: '0.5rem'
           }}
-          title="Fermer"
         >
           ×
         </button>

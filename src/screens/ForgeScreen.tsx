@@ -16,7 +16,8 @@ export default function ForgeScreen() {
     buyForgeItem,
     generateForgeStock,
     closeInventory,
-    narrativeCounters
+    narrativeCounters,
+    relics
   } = useGameStore()
   
   const [hasVisitedForge, setHasVisitedForge] = useState(false)
@@ -163,7 +164,7 @@ export default function ForgeScreen() {
             gap: '0.75rem'
           }}>
             {itemsToRepair.map(({ item, location, slot }) => {
-              const repairCost = calculateRepairCost(item, narrativeCounters)
+              const repairCost = calculateRepairCost(item, narrativeCounters, relics)
               const rarityColor = getRarityColor(item.rarity)
               const canAfford = gold >= repairCost
               
@@ -349,11 +350,11 @@ export default function ForgeScreen() {
               fontSize: '1.1rem',
               textAlign: 'center',
               marginBottom: '1.5rem',
-              color: gold >= calculateRepairCost(selectedRepairItem) ? '#ca8' : '#c44'
+              color: gold >= calculateRepairCost(selectedRepairItem, narrativeCounters, relics) ? '#ca8' : '#c44'
             }}>
-              {calculateRepairCost(selectedRepairItem)}💰
+              {calculateRepairCost(selectedRepairItem, narrativeCounters, relics)}💰
             </div>
-            {gold < calculateRepairCost(selectedRepairItem) && (
+            {gold < calculateRepairCost(selectedRepairItem, narrativeCounters, relics) && (
               <div style={{
                 color: '#c44',
                 textAlign: 'center',
@@ -375,11 +376,11 @@ export default function ForgeScreen() {
               </button>
               <button
                 onClick={() => handleRepair(selectedRepairItem)}
-                disabled={gold < calculateRepairCost(selectedRepairItem)}
+                disabled={gold < calculateRepairCost(selectedRepairItem, narrativeCounters, relics)}
                 style={{
                   flex: 1,
                   background: '#3a2a2a',
-                  opacity: gold >= calculateRepairCost(selectedRepairItem) ? 1 : 0.5
+                  opacity: gold >= calculateRepairCost(selectedRepairItem, narrativeCounters, relics) ? 1 : 0.5
                 }}
               >
                 RÉPARER

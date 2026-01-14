@@ -45,6 +45,7 @@ export default function CombatResult({ result, onComplete }: CombatResultProps) 
   
   const config = getOutcomeConfig()
   const showNearMiss = result.ratio >= 0.4 && result.ratio <= 0.5 && result.outcome !== 'defeat'
+  const breakdown = result.breakdown
   
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -97,6 +98,59 @@ export default function CombatResult({ result, onComplete }: CombatResultProps) 
       >
         {result.message}
       </motion.div>
+      
+      {/* Breakdown simple */}
+      {breakdown && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+          style={{
+            marginTop: '1rem',
+            padding: '0.75rem',
+            background: '#1a1a1a',
+            borderRadius: '6px',
+            border: '1px solid #333',
+            color: '#ddd',
+            fontSize: '0.9rem',
+            textAlign: 'left'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+            <span>Ratio</span>
+            <strong style={{ color: config.color }}>{breakdown.ratio.toFixed(2)}</strong>
+          </div>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+            <div>
+              <div style={{ fontWeight: 'bold', marginBottom: '0.15rem', color: '#ca8' }}>Toi</div>
+              <div style={{ opacity: 0.8 }}>
+                ATK {breakdown.player.atkContribution.toFixed(1)} + DEF {breakdown.player.defContribution.toFixed(1)} + VIT {breakdown.player.vitContribution.toFixed(1)}
+              </div>
+              <div style={{ opacity: 0.7 }}>
+                RNG {breakdown.player.randomRoll.toFixed(1)} → <strong>{breakdown.player.total.toFixed(1)}</strong>
+              </div>
+            </div>
+            <div>
+              <div style={{ fontWeight: 'bold', marginBottom: '0.15rem', color: '#888' }}>Ennemi</div>
+              <div style={{ opacity: 0.8 }}>
+                ATK {breakdown.enemy.atkContribution.toFixed(1)} + DEF {breakdown.enemy.defContribution.toFixed(1)} + VIT {breakdown.enemy.vitContribution.toFixed(1)}
+              </div>
+              <div style={{ opacity: 0.7 }}>
+                RNG {breakdown.enemy.randomRoll.toFixed(1)} → <strong>{breakdown.enemy.total.toFixed(1)}</strong>
+              </div>
+            </div>
+          </div>
+          
+          <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#aaa', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <span>Seuils:</span>
+            <span>Écrasante &gt; {breakdown.thresholds.crushing}</span>
+            <span>Victoire &gt; {breakdown.thresholds.victory}</span>
+            <span>Coûteuse &gt; {breakdown.thresholds.costly}</span>
+            <span>Fuite &gt; {breakdown.thresholds.flee}</span>
+          </div>
+        </motion.div>
+      )}
       
       {/* Near Miss */}
       {showNearMiss && (

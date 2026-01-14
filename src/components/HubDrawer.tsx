@@ -32,9 +32,9 @@ export default function HubDrawer({
   }
 
   const menuItems = [
-    { label: 'INVENTAIRE', action: onInventory, icon: '🎒' },
+    { label: 'INVENTAIRE', action: onInventory, icon: '💼' },
     { label: 'MARCHÉ', action: onMarche, icon: '🏪' },
-    { label: 'USURIER', action: onMorten, icon: '💀' },
+    { label: 'USURIER', action: onMorten, icon: '⚖️' },
     { label: 'FORGE', action: onForge, icon: '⚒️' },
     { label: 'TAVERNE', action: onTaverne, icon: '🍺' }
   ]

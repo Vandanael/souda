@@ -18,11 +18,18 @@ export const BALANCE_CONFIG = {
   
   // ÉCONOMIE
   economy: {
-    dailyInterest: 5, // Intérêts quotidiens de la dette (selon GDD)
+    dailyInterest: 5, // Intérêts quotidiens de la dette (déprécié, utiliser progressiveInterest)
     initialDebt: 80,
+    // Intérêts progressifs par période
+    progressiveInterest: {
+      day1to5: 5,   // J1-5 : +5💰
+      day6to10: 7,  // J6-10 : +7💰
+      day11to15: 10, // J11-15 : +10💰
+      day16to20: 15  // J16-20 : +15💰
+    },
     // Multiplicateurs de prix
     buyMultiplier: 1.5, // Prix d'achat = valeur × 1.5
-    repairCostPerPoint: 0.25, // Coût réparation = (max - current) × 0.25 × rareté (-17% supplémentaire, -42% au total)
+    repairCostPerPoint: 0.15, // Coût réparation = (max - current) × 0.15 × rareté (réduit de 0.25 à 0.15, -40%)
     goldMultiplier: 1.25 // FIX: Audit 2 - Réduit de 1.35 à 1.25 (compromis recommandé)
   },
   

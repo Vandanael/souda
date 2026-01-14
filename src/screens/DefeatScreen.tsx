@@ -5,14 +5,12 @@ import { determineEnding } from '../features/endings/endings.logic'
 import { useMetaProgressionStore } from '../store/metaProgression'
 import { loadUnlockState, checkUnlocks, saveUnlockState } from '../features/meta/unlocks'
 import EndingScreen from './EndingScreen'
-import MetaProgressionDisplay from '../components/MetaProgressionDisplay'
 
 export default function DefeatScreen() {
   const gameState = useGameStore()
   const { calculateRunXP } = useMetaProgressionStore()
   const [ending, setEnding] = useState<ReturnType<typeof determineEnding> | null>(null)
   const [xpGained, setXpGained] = useState<number | null>(null)
-  const [showProgression, setShowProgression] = useState(false)
   
   useEffect(() => {
     // Déterminer la fin
@@ -31,7 +29,9 @@ export default function DefeatScreen() {
         combatsFled,
         combatsLost,
         narrativeCounters,
-        triggeredEvents
+        triggeredEvents,
+        relicFragments,
+        relics
       } = gameState
       
       const legendaryItems = inventory.filter(item => item.rarity === 'legendary').map(item => item.name)
@@ -42,7 +42,6 @@ export default function DefeatScreen() {
       // Calculer l'XP gagnée
       const xp = calculateRunXP(day, gold, narrativeChoicesCount)
       setXpGained(xp)
-      setShowProgression(true)
       
       const runData = {
         id: crypto.randomUUID(),
@@ -64,7 +63,9 @@ export default function DefeatScreen() {
           cynisme: narrativeCounters.cynisme || 0,
           humanite: narrativeCounters.humanite || 0,
           pragmatisme: narrativeCounters.pragmatisme || 0
-        }
+        },
+        relicFragments: relicFragments,
+        relicsCount: relics.length
       }
       
       await saveRun(runData)
@@ -82,60 +83,6 @@ export default function DefeatScreen() {
   }
   
   return (
-    <>
-      {/* Afficher l'XP immédiatement AVANT l'ending screen */}
-      {showProgression && xpGained !== null && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.95)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 10001,
-          padding: '2rem',
-          textAlign: 'center'
-        }}>
-          <div style={{
-            fontSize: '1.5rem',
-            fontWeight: 'bold',
-            marginBottom: '1rem',
-            color: '#ca8'
-          }}>
-            Tu as survécu {gameState.day} jour{gameState.day > 1 ? 's' : ''}
-          </div>
-          <div style={{
-            fontSize: '1.2rem',
-            marginBottom: '2rem',
-            color: '#ddd'
-          }}>
-            Tu as gagné <span style={{ color: '#4a9eff', fontWeight: 'bold' }}>{xpGained} XP</span> !
-          </div>
-          <div style={{
-            fontSize: '1rem',
-            color: '#aaa',
-            marginBottom: '2rem',
-            fontStyle: 'italic',
-            maxWidth: '400px'
-          }}>
-            Continue pour débloquer de nouveaux contenus et améliorer tes prochaines runs.
-          </div>
-          <MetaProgressionDisplay 
-            xpGained={xpGained}
-            onAnimationComplete={() => {
-              // Après l'animation, afficher l'ending screen
-              setTimeout(() => {
-                setShowProgression(false)
-              }, 1000)
-            }}
-          />
-        </div>
-      )}
-      {!showProgression && <EndingScreen ending={ending} />}
-    </>
+    <EndingScreen ending={ending} xpGained={xpGained ?? undefined} />
   )
 }

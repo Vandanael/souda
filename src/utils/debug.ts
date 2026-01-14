@@ -2,6 +2,8 @@
  * Utilitaires de debug pour nettoyer le cache et réinitialiser le jeu
  */
 
+import { clearHallOfFame } from '../features/meta/hallOfFame'
+
 /**
  * Supprime toutes les bases de données IndexedDB
  */
@@ -49,7 +51,7 @@ function clearLocalStorage(): void {
 }
 
 /**
- * Nettoie tout le cache (IndexedDB + localStorage) et recharge la page
+ * Nettoie tout le cache (IndexedDB + localStorage + Hall of Fame) et recharge la page
  */
 export async function clearAllCacheAndReload(): Promise<void> {
   console.log('🧹 Nettoyage du cache en cours...')
@@ -60,6 +62,9 @@ export async function clearAllCacheAndReload(): Promise<void> {
     
     // Nettoyer localStorage
     clearLocalStorage()
+    
+    // Nettoyer Hall of Fame
+    await clearHallOfFame()
     
     console.log('✅ Cache nettoyé, rechargement de la page...')
     
@@ -87,6 +92,9 @@ export async function resetGameAndCache(): Promise<void> {
     
     // Nettoyer localStorage
     clearLocalStorage()
+    
+    // Nettoyer Hall of Fame
+    await clearHallOfFame()
     
     console.log('✅ Cache nettoyé')
   } catch (error) {

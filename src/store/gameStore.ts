@@ -17,8 +17,12 @@ import { Location, ExplorationResult, normalizeLocation, LOCATION_TYPES } from '
 import { calculateStatsFromEquipment, type PlayerStats } from '../utils/stats'
 import { audioManager } from '../features/audio/audioManager'
 import { getOriginById } from '../features/meta/origins'
+import { RelicInstance } from '../types/relic'
+import { addFragmentsAndMaybeCreate, gainRelicXp } from '../features/relics/relics.logic'
+import { getRelicGoldMultiplier, getRelicReputationModifier } from '../features/relics/relics.bonus'
+import { BALANCE_CONFIG } from '../config/balance'
 
-export type GamePhase = 'start' | 'origin' | 'tutorial' | 'aube' | 'exploration' | 'crepuscule' | 'defeat' | 'victory' | 'inventory' | 'marche' | 'morten' | 'forge' | 'taverne' | 'narrative' | 'hallOfFame' | 'settings'
+export type GamePhase = 'start' | 'origin' | 'tutorial' | 'aube' | 'exploration' | 'crepuscule' | 'defeat' | 'victory' | 'inventory' | 'marche' | 'morten' | 'forge' | 'taverne' | 'narrative' | 'hallOfFame' | 'settings' | 'reliques' | 'fragmentCollection'
 
 export interface GameState {
   // Progression
@@ -54,6 +58,10 @@ export interface GameState {
   
   // Méta-progression
   selectedOrigin: string // ID de l'origine sélectionnée
+  
+  // Reliques
+  relics: RelicInstance[]
+  relicFragments: Record<string, number>
   
   // Équipement et inventaire
   equipment: Partial<Record<string, Item>>
@@ -201,7 +209,68 @@ const INITIAL_STATE = {
   eventCooldowns: {} as Record<string, number>,
   recentMonologues: [] as string[],
   selectedOrigin: 'deserteur' as string,
-  characterArcs: {} as Record<string, CharacterArc>
+  characterArcs: {} as Record<string, CharacterArc>,
+  relics: [] as RelicInstance[],
+  relicFragments: {} as Record<string, number>
+}
+
+/**
+ * Calcule la progression de la dette vers l'objectif
+ * @param debt Dette actuelle
+ * @param _day Jour actuel (non utilisé actuellement)
+ * @returns Progression avec current, target, percentage, et status
+ */
+export function calculateDebtProgress(debt: number, _day: number): {
+  current: number
+  target: number
+  percentage: number
+  status: 'ahead' | 'behind' | 'on_track'
+  difference: number
+  message: string
+} {
+  const TOTAL_DAYS = 20
+  const INITIAL_DEBT = BALANCE_CONFIG.economy.initialDebt
+  const DAILY_INTEREST = BALANCE_CONFIG.economy.dailyInterest
+  
+  // Objectif : 0💰 au Jour 20
+  // Dette finale si rien payé : 80 + (5 × 19) = 175💰
+  const targetDebt = INITIAL_DEBT + (DAILY_INTEREST * (TOTAL_DAYS - 1)) // 175💰
+  
+  // Différence par rapport à l'objectif final
+  const difference = debt - targetDebt
+  
+  // Status basé sur la différence
+  let status: 'ahead' | 'behind' | 'on_track'
+  if (difference < -20) {
+    status = 'ahead' // En avance de plus de 20💰
+  } else if (difference > 20) {
+    status = 'behind' // En retard de plus de 20💰
+  } else {
+    status = 'on_track' // Dans la marge
+  }
+  
+  // Pourcentage : 0% = dette actuelle, 100% = objectif final
+  // Mais on veut afficher le pourcentage de progression vers 0
+  const percentage = Math.max(0, Math.min(100, ((targetDebt - debt) / targetDebt) * 100))
+  
+  // Message
+  let message = ''
+  if (status === 'ahead') {
+    message = `En avance de ${Math.abs(difference).toFixed(0)}💰`
+  } else if (status === 'behind') {
+    message = `En retard de ${difference.toFixed(0)}💰`
+  } else {
+    message = 'Sur la bonne voie'
+  }
+  
+  return {
+    current: debt,
+    target: targetDebt,
+    percentage,
+    status,
+    difference,
+    message
+  }
 }
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -425,7 +494,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         richness: 5, // Richesse maximum
         explored: false,
         explorationCount: 0,
-        firstSeenDay: state.day
+        firstSeenDay: state.day,
       }
       
       // Remplacer un lieu aléatoire par le cache au trésor
@@ -443,11 +512,11 @@ export const useGameStore = create<GameState>((set, get) => ({
       rumors: [...state.rumors.filter(r => r.day >= state.day - 3), ...rumors]
     })
   },
-  
+
       exploreLocation: (location: Location) => {
         const state = get()
         
-        if (state.actionsRemaining <= 0) return
+        if (state.actionsRemaining < 1) return
         if (state.phase !== 'exploration') return
         
         // Vérifier si un événement narratif doit se déclencher pendant l'exploration
@@ -474,12 +543,16 @@ export const useGameStore = create<GameState>((set, get) => ({
           (r.targetLocationId === location.id || !r.targetLocationId)
         )
         
-        // Résoudre l'exploration avec le nouveau système (incluant rumeurs)
+        // Résoudre l'exploration avec le nouveau système (incluant rumeurs et scaling par jour)
         const explorationResult = resolveExploration(
           location,
           state.playerStats,
           state.equipment,
-          activeRumors
+          activeRumors,
+          undefined,
+          undefined, // lockedEvent retiré (scout supprimé)
+          state.day, // Passer le jour pour scaling
+          state.relics // Passer les reliques pour appliquer les bonus
         )
         
         // Normaliser le lieu d'abord pour s'assurer qu'il a toutes les propriétés
@@ -511,6 +584,13 @@ export const useGameStore = create<GameState>((set, get) => ({
       const combatResult = explorationResult.combatResult!
       const enemy = getRandomEnemy(location.risk)
       
+      // Gagner de l'XP de relique selon l'issue
+      if (combatResult.outcome === 'crushing' || combatResult.outcome === 'victory') {
+        set({ relics: gainRelicXp(state.relics, 2) })
+      } else if (combatResult.outcome === 'costly') {
+        set({ relics: gainRelicXp(state.relics, 1) })
+      }
+      
       // Si défaite, on gère la mort
       if (combatResult.outcome === 'defeat') {
         set({
@@ -529,11 +609,13 @@ export const useGameStore = create<GameState>((set, get) => ({
         return
       }
       
-      // Sinon, on ajoute l'or gagné (avec réduction si armure maudite équipée)
+      // Sinon, on ajoute l'or gagné (avec réduction si armure maudite équipée, bonus si reliques)
       if (combatResult.gold) {
         const equippedItems = Object.values(state.equipment).filter(Boolean) as Item[]
         const hasCursedArmor = equippedItems.some(item => item.cursed && item.id === 'armor_compromised')
-        const goldEarned = hasCursedArmor ? Math.floor(combatResult.gold * 0.9) : combatResult.gold // -10% si armure maudite
+        const cursedMultiplier = hasCursedArmor ? 0.9 : 1.0 // -10% si armure maudite
+        const relicGoldMultiplier = getRelicGoldMultiplier(state.relics) // Bonus or des reliques
+        const goldEarned = Math.floor(combatResult.gold * cursedMultiplier * relicGoldMultiplier)
         set({ gold: state.gold + goldEarned })
       }
       
@@ -613,6 +695,8 @@ export const useGameStore = create<GameState>((set, get) => ({
           type: 'loot',
           item: explorationResult.item,
           gold: explorationResult.gold,
+          relicFragmentId: explorationResult.relicFragmentId,
+          relicFragmentAmount: explorationResult.relicFragmentAmount,
           message: explorationResult.specialMessage 
             ? `${explorationResult.specialMessage} ${explorationResult.item 
               ? `Tu trouves ${explorationResult.item.name}.`
@@ -635,6 +719,24 @@ export const useGameStore = create<GameState>((set, get) => ({
         newGold = state.gold + goldEarned
       }
       
+      // Ajouter fragments de relique si drop
+      let newRelicFragments = state.relicFragments
+      let newRelics = state.relics
+      if (explorationResult.relicFragmentId && explorationResult.relicFragmentAmount) {
+        const res = addFragmentsAndMaybeCreate(
+          state.relicFragments,
+          state.relics,
+          explorationResult.relicFragmentId,
+          explorationResult.relicFragmentAmount,
+          state.day
+        )
+        newRelicFragments = res.fragments
+        newRelics = res.relics
+        
+        // Donner un petit XP de découverte à toutes les reliques
+        newRelics = gainRelicXp(newRelics, 1)
+      }
+      
       let newLegendaryCount = state.legendaryItemsFound
       if (explorationResult.item && explorationResult.item.rarity === 'legendary') {
         newLegendaryCount = state.legendaryItemsFound + 1
@@ -642,7 +744,9 @@ export const useGameStore = create<GameState>((set, get) => ({
       
       set({ 
         gold: newGold,
-        legendaryItemsFound: newLegendaryCount
+        legendaryItemsFound: newLegendaryCount,
+        relicFragments: newRelicFragments,
+        relics: newRelics
       })
     } else if (explorationResult.event === 'empty') {
       set({
@@ -1054,8 +1158,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   repairItem: (item: Item) => {
     const state = get()
     
-    // Calculer le coût (avec bonus pragmatisme si applicable)
-    const cost = calculateRepairCost(item, state.narrativeCounters)
+    // Calculer le coût (avec bonus pragmatisme et reliques si applicable)
+    const cost = calculateRepairCost(item, state.narrativeCounters, state.relics)
     
     // Vérifier que le joueur a assez d'or
     if (state.gold < cost) {
@@ -1275,6 +1379,10 @@ export const useGameStore = create<GameState>((set, get) => ({
       if (cynisme >= 15 && repChange > 0) {
         repChange = Math.max(0, repChange - 1) // Malus cynisme
       }
+      
+      // Modificateur de réputation des reliques
+      const relicRepModifier = getRelicReputationModifier(newState.relics)
+      repChange += relicRepModifier
       
       newState.reputation = Math.max(1, Math.min(5, newState.reputation + repChange)) as 1 | 2 | 3 | 4 | 5
     }

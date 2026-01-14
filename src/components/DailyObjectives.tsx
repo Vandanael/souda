@@ -148,7 +148,7 @@ export default function DailyObjectives() {
         color: '#fff',
         textAlign: 'center'
       }}>
-        📋 OBJECTIFS QUOTIDIENS
+        OBJECTIFS QUOTIDIENS
       </div>
       
       <div style={{
@@ -180,7 +180,7 @@ export default function DailyObjectives() {
                 color: obj.completed ? '#2ecc71' : '#ccc',
                 fontWeight: obj.completed ? 'bold' : 'normal'
               }}>
-                {obj.completed ? '✅' : '⭕'} {obj.title}
+                {obj.title}
               </div>
               {obj.completed && (
                 <div style={{

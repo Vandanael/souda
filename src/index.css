@@ -1,3 +1,65 @@
+/**
+ * Styles globaux pour Bourg-Creux
+ * Design System Grimdark / Tactical Noir
+ */
+
+/* ============================================================================
+   Variables CSS (Design Tokens)
+   ============================================================================ */
+
+:root {
+  /* Couleurs - Neutres */
+  --color-neutral-charcoal: #0B0B0D;
+  --color-neutral-ink: #121216;
+  --color-neutral-slate: #1D1E24;
+  --color-neutral-soot: #2B2D36;
+  --color-neutral-ash: #8B8E98;
+  --color-neutral-ivory: #E7E1D6;
+  
+  /* Couleurs - Sang */
+  --color-blood-deep: #7A0F1B;
+  --color-blood-carmine: #B61D2E;
+  --color-blood-rust: #4C1418;
+  
+  /* Couleurs - Or */
+  --color-gold-tarnished: #B88A2B;
+  --color-gold-burnt: #D6A13A;
+  --color-gold-bone: #F1D58A;
+  
+  /* Polices */
+  --font-serif: 'Cormorant Garamond', serif;
+  --font-sans: 'Inter', sans-serif;
+  
+  /* Espacements */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 0.75rem;
+  --spacing-lg: 1rem;
+  --spacing-xl: 1.5rem;
+  --spacing-2xl: 2rem;
+  --spacing-3xl: 3rem;
+  --spacing-4xl: 4rem;
+  
+  /* Bordures */
+  --border-radius-sm: 2px;
+  --border-radius-md: 4px;
+  --border-radius-lg: 6px;
+  --border-radius-xl: 8px;
+  --border-radius-2xl: 12px;
+  
+  /* Ombres */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 8px 16px rgba(0, 0, 0, 0.6);
+  --shadow-glow-gold: 0 0 8px rgba(214, 161, 58, 0.25);
+  --shadow-glow-carmine: 0 0 8px rgba(182, 29, 46, 0.25);
+}
+
+/* ============================================================================
+   Reset & Base
+   ============================================================================ */
+
 * {
   margin: 0;
   padding: 0;
@@ -13,13 +75,13 @@ html, body {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: #0a0a0a; /* Fond plus sombre pour le wrapper Web */
-  color: #e0e0e0;
+  background: var(--color-neutral-charcoal);
+  color: var(--color-neutral-ivory);
+  font-size: 1rem;
+  line-height: 1.5;
 }
 
 #root {
@@ -29,33 +91,148 @@ body {
   flex-direction: column;
 }
 
+/* ============================================================================
+   Typographie
+   ============================================================================ */
+
+/* Classe pour texte narratif (serif) */
+.text-narrative {
+  font-family: var(--font-serif);
+  font-size: 1.125rem;
+  line-height: 1.625;
+  font-weight: 400;
+}
+
+.text-narrative-title {
+  font-family: var(--font-serif);
+  font-size: 1.875rem;
+  line-height: 1.25;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+.text-narrative-quote {
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  line-height: 1.625;
+  letter-spacing: 0.025em;
+}
+
+/* ============================================================================
+   Boutons
+   ============================================================================ */
+
 button {
-  font-family: inherit;
+  font-family: var(--font-sans);
   font-size: 1rem;
+  font-weight: 600;
   padding: 0.75rem 1.5rem;
-  background: #555;
-  color: #e0e0e0;
-  border: 2px solid #777;
-  border-radius: 4px;
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--color-neutral-soot);
+  border-radius: var(--border-radius-md);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  letter-spacing: 0.05em;
+  background: var(--color-neutral-slate);
+  color: var(--color-neutral-ivory);
 }
 
 button:hover {
-  background: #666;
-  border-color: #888;
+  background: var(--color-neutral-soot);
+  border-color: var(--color-neutral-ash);
 }
 
 button:active {
-  background: #444;
+  transform: scale(0.98);
+  box-shadow: var(--shadow-sm);
 }
 
 button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  pointer-events: none;
 }
 
-/* Respect prefers-reduced-motion */
+/* Focus visible pour accessibilité clavier */
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible {
+  outline: 3px solid var(--color-gold-burnt);
+  outline-offset: 2px;
+}
+
+/* ============================================================================
+   Grain papier (CSS pur)
+   ============================================================================ */
+
+.grain-none {
+  background-image: none;
+}
+
+.grain-light {
+  background-image: 
+    radial-gradient(circle at 20% 30%, rgba(0,0,0,0.05) 0%, transparent 0.8px),
+    radial-gradient(circle at 60% 70%, rgba(0,0,0,0.05) 0%, transparent 0.8px),
+    radial-gradient(circle at 40% 50%, rgba(0,0,0,0.05) 0%, transparent 0.8px);
+  background-size: 200% 200%;
+  background-position: 0 0;
+}
+
+.grain-medium {
+  background-image: 
+    radial-gradient(circle at 15% 25%, rgba(0,0,0,0.1) 0%, transparent 1px),
+    radial-gradient(circle at 55% 65%, rgba(0,0,0,0.1) 0%, transparent 1px),
+    radial-gradient(circle at 35% 45%, rgba(0,0,0,0.1) 0%, transparent 1px),
+    radial-gradient(circle at 75% 85%, rgba(0,0,0,0.1) 0%, transparent 1px),
+    radial-gradient(circle at 25% 75%, rgba(0,0,0,0.1) 0%, transparent 1px);
+  background-size: 200% 200%;
+  background-position: 0 0;
+}
+
+.grain-heavy {
+  background-image: 
+    radial-gradient(circle at 10% 20%, rgba(0,0,0,0.15) 0%, transparent 1.2px),
+    radial-gradient(circle at 50% 60%, rgba(0,0,0,0.15) 0%, transparent 1.2px),
+    radial-gradient(circle at 30% 40%, rgba(0,0,0,0.15) 0%, transparent 1.2px),
+    radial-gradient(circle at 70% 80%, rgba(0,0,0,0.15) 0%, transparent 1.2px),
+    radial-gradient(circle at 20% 70%, rgba(0,0,0,0.15) 0%, transparent 1.2px),
+    radial-gradient(circle at 90% 30%, rgba(0,0,0,0.15) 0%, transparent 1.2px);
+  background-size: 200% 200%;
+  background-position: 0 0;
+}
+
+/* ============================================================================
+   Bordures encrage (irrégulières)
+   ============================================================================ */
+
+.border-ink {
+  border: 2px solid var(--color-neutral-soot);
+  position: relative;
+}
+
+.border-ink::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border: 1px solid var(--color-neutral-soot);
+  clip-path: polygon(
+    0% 2px, 2px 0%, calc(100% - 2px) 0%, 100% 2px,
+    100% calc(100% - 2px), calc(100% - 2px) 100%, 2px 100%, 0% calc(100% - 2px)
+  );
+  pointer-events: none;
+}
+
+/* ============================================================================
+   Respect prefers-reduced-motion
+   ============================================================================ */
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -66,7 +243,10 @@ button:disabled {
   }
 }
 
-/* Touch targets minimum 44x44px */
+/* ============================================================================
+   Touch targets minimum 44x44px
+   ============================================================================ */
+
 button, a, [role="button"] {
   min-height: 44px;
   min-width: 44px;
@@ -75,38 +255,24 @@ button, a, [role="button"] {
   justify-content: center;
 }
 
-/* Améliorer contraste pour accessibilité */
-body {
-  color: #e0e0e0; /* Ratio 12.6:1 sur #1a1a1a */
-}
+/* ============================================================================
+   Tutorial styles
+   ============================================================================ */
 
-button {
-  color: #fff; /* Ratio 7.1:1 sur #555 */
-}
-
-/* Focus visible pour accessibilité clavier */
-button:focus-visible,
-a:focus-visible,
-[role="button"]:focus-visible {
-  outline: 3px solid #ca8;
-  outline-offset: 2px;
-}
-
-/* Tutorial styles */
 .tutorial-highlight {
   position: relative;
   z-index: 9999 !important;
   animation: tutorial-pulse 1.5s ease-in-out infinite;
-  box-shadow: 0 0 0 4px rgba(202, 136, 136, 0.5) !important;
-  border-radius: 4px;
+  box-shadow: 0 0 0 4px rgba(214, 161, 58, 0.5) !important;
+  border-radius: var(--border-radius-md);
 }
 
 @keyframes tutorial-pulse {
   0%, 100% {
-    box-shadow: 0 0 0 4px rgba(202, 136, 136, 0.5);
+    box-shadow: 0 0 0 4px rgba(214, 161, 58, 0.5);
   }
   50% {
-    box-shadow: 0 0 0 8px rgba(202, 136, 136, 0.3);
+    box-shadow: 0 0 0 8px rgba(214, 161, 58, 0.3);
   }
 }
 
@@ -116,7 +282,7 @@ a:focus-visible,
 
 .tutorial-text-typewriter {
   overflow: hidden;
-  border-right: 2px solid #ca8;
+  border-right: 2px solid var(--color-gold-tarnished);
   white-space: nowrap;
   animation: typing 0.5s steps(40, end), blink-caret 0.75s step-end infinite;
 }
@@ -135,6 +301,6 @@ a:focus-visible,
     border-color: transparent;
   }
   50% {
-    border-color: #ca8;
+    border-color: var(--color-gold-tarnished);
   }
 }

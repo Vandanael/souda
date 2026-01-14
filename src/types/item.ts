@@ -199,13 +199,14 @@ export function getRarityName(rarity: ItemRarity): string {
   return names[rarity]
 }
 
-// Fonction pour obtenir la couleur selon la rareté (en gris pour l'instant)
+// Fonction pour obtenir la couleur selon la rareté (selon le design system)
 export function getRarityColor(rarity: ItemRarity): string {
-  const colors: Record<ItemRarity, string> = {
-    common: '#888',      // Gris moyen
-    uncommon: '#aaa',    // Gris clair
-    rare: '#ddd',        // Gris très clair
-    legendary: '#fff'    // Blanc
+  // Import dynamique pour éviter les dépendances circulaires
+  const designColors = {
+    common: '#8B8E98',      // neutral.ash
+    uncommon: '#E7E1D6',    // neutral.ivory
+    rare: '#B88A2B',        // gold.tarnished
+    legendary: '#D6A13A'    // gold.burnt
   }
-  return colors[rarity]
+  return designColors[rarity]
 }

@@ -7,9 +7,10 @@ import RunSummary, { type RunData } from '../components/RunSummary'
 
 interface EndingScreenProps {
   ending: Ending
+  xpGained?: number
 }
 
-export default function EndingScreen({ ending }: EndingScreenProps) {
+export default function EndingScreen({ ending, xpGained }: EndingScreenProps) {
   const { 
     day, 
     gold, 
@@ -159,7 +160,7 @@ export default function EndingScreen({ ending }: EndingScreenProps) {
             marginBottom: '2rem'
           }}
         >
-          <RunSummary runData={runData} compact />
+          <RunSummary runData={runData} compact xpGained={xpGained} />
         </motion.div>
         
         {/* Boutons */}

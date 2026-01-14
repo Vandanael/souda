@@ -3,6 +3,7 @@ import { useGameStore } from '../store/gameStore'
 import { NPC_POOL, type NPC, type DialogueLine } from '../types/npc'
 import NarrativeText from '../components/NarrativeText'
 import { useIsMobile } from '../hooks/useIsMobile'
+import { colors } from '../design/tokens'
 
 export default function TaverneScreen() {
   const {
@@ -107,7 +108,7 @@ export default function TaverneScreen() {
           }}>
             <h2 style={{ marginTop: 0, marginBottom: '1rem', color: '#ddd' }}>Les Rumeurs</h2>
             <p style={{ color: '#aaa', marginBottom: '1.5rem', lineHeight: '1.6' }}>
-              Les rumeurs t'aident à planifier tes explorations. Elles apparaissent avec une icône sur les lieux de la carte.
+              Les rumeurs t'aident à planifier tes explorations. Elles apparaissent <span style={{ color: colors.green.moss, fontWeight: 600 }}>sur</span> les lieux de la carte.
             </p>
             <div style={{ color: '#aaa', lineHeight: '1.6', marginBottom: '1.5rem' }}>
               <div style={{ marginBottom: '0.75rem', padding: '0.75rem', background: '#1a1a1a', borderRadius: '4px' }}>
@@ -235,7 +236,6 @@ export default function TaverneScreen() {
                     border: '1px solid #333',
                     position: 'relative'
                   }}
-                  title={effectDescription}
                 >
                   <div style={{
                     display: 'flex',

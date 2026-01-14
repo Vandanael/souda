@@ -9,6 +9,8 @@ type SoundId =
   | 'combat_start' | 'hit_01' | 'hit_02' | 'hit_03' | 'victory' | 'defeat' | 'flee'
   // UI
   | 'equip_metal' | 'equip_leather' | 'ui_open' | 'ui_close' | 'coins' | 'coins_loss' | 'ui_click'
+  // Design System - Sons métalliques
+  | 'button_metal_click' // Clic métallique sourd pour boutons
 
 type MusicId = 'ambient_camp' | 'ambient_explore' | 'ambient_combat'
 

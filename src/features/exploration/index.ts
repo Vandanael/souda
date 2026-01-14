@@ -1,5 +1,6 @@
 // Export public de l'API d'exploration
 export {
   generateDailyLocations,
-  resolveExploration
+  resolveExploration,
+  determineEventType
 } from './exploration.logic'

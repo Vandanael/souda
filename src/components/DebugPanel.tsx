@@ -4,7 +4,7 @@
 
 import { useState } from 'react'
 import { useGameStore } from '../store/gameStore'
-import { clearAllCacheAndReload } from '../utils/debug'
+import { clearAllCacheAndReload, resetGameAndCache } from '../utils/debug'
 
 export default function DebugPanel() {
   const [isOpen, setIsOpen] = useState(false)
@@ -16,10 +16,27 @@ export default function DebugPanel() {
     }
   }
 
-  const handleResetGame = () => {
-    if (confirm('🔄 Reset du jeu (sans nettoyer le cache) ?')) {
-      resetGame()
-      setIsOpen(false)
+  const handleResetGame = async () => {
+    if (confirm('💥 Reset complet : vider TOUT (cache + Hall of Fame + progression) ?\n\n⚠️ Action irréversible !\n\nLa page va se recharger automatiquement.')) {
+      try {
+        // Nettoyer le cache (IndexedDB + localStorage + Hall of Fame)
+        await resetGameAndCache()
+        
+        // Reset le jeu dans le store
+        resetGame()
+        
+        console.log('✅ Reset complet effectué, rechargement...')
+        
+        // Attendre un peu pour que les opérations se terminent
+        await new Promise(resolve => setTimeout(resolve, 300))
+        
+        // Recharger la page pour être sûr que tout est à zéro
+        window.location.reload()
+      } catch (error) {
+        console.error('❌ Erreur lors du reset:', error)
+        // Recharger quand même
+        window.location.reload()
+      }
     }
   }
 
@@ -48,7 +65,9 @@ export default function DebugPanel() {
         top: '10px',
         left: '10px',
         zIndex: 9999,
-        fontFamily: 'monospace'
+        fontFamily: 'monospace',
+        // Style orange distinct de la DA de l'app
+        filter: 'drop-shadow(0 2px 4px rgba(255, 165, 0, 0.5))'
       }}
     >
       {/* Bouton toggle */}
@@ -56,16 +75,16 @@ export default function DebugPanel() {
         onClick={() => setIsOpen(!isOpen)}
         style={{
           padding: '0.5rem',
-          background: 'transparent',
-          border: '2px solid #e66',
-          color: '#fff',
+          background: '#ff8800',
+          border: '2px solid #ffaa00',
+          color: '#000',
           fontSize: '0.7rem',
           fontWeight: 'bold',
           cursor: 'pointer',
           borderRadius: '4px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
+          boxShadow: '0 2px 4px rgba(255, 140, 0, 0.6)',
+          fontFamily: 'monospace'
         }}
-        title="Debug Panel"
       >
         🐛
       </button>
@@ -75,19 +94,20 @@ export default function DebugPanel() {
         <div
           style={{
             marginTop: '0.5rem',
-            background: '#2a1a1a',
-            border: '2px solid #c44',
+            background: '#1a0f00',
+            border: '2px solid #ff8800',
             borderRadius: '4px',
             padding: '0.75rem',
             minWidth: '200px',
-            boxShadow: '0 4px 8px rgba(0,0,0,0.5)'
+            boxShadow: '0 4px 8px rgba(255, 140, 0, 0.4)',
+            fontFamily: 'monospace'
           }}
         >
           <div
             style={{
               fontSize: '0.75rem',
               fontWeight: 'bold',
-              color: '#f88',
+              color: '#ffaa00',
               marginBottom: '0.5rem',
               display: 'flex',
               justifyContent: 'space-between',
@@ -100,7 +120,7 @@ export default function DebugPanel() {
               style={{
                 background: 'transparent',
                 border: 'none',
-                color: '#f88',
+                color: '#ffaa00',
                 cursor: 'pointer',
                 fontSize: '1rem',
                 padding: '0'
@@ -114,11 +134,12 @@ export default function DebugPanel() {
           <div
             style={{
               fontSize: '0.65rem',
-              color: '#aaa',
+              color: '#ffcc88',
               marginBottom: '0.75rem',
               padding: '0.5rem',
-              background: '#1a0a0a',
-              borderRadius: '2px'
+              background: '#0a0500',
+              borderRadius: '2px',
+              border: '1px solid #ff8800'
             }}
           >
             J{day} | {gold}💰 | {debt}💰 | {phase}
@@ -130,19 +151,20 @@ export default function DebugPanel() {
               onClick={handleShowState}
               style={{
                 padding: '0.5rem',
-                background: '#555',
-                border: '1px solid #777',
-                color: '#fff',
+                background: '#332200',
+                border: '1px solid #ff8800',
+                color: '#ffcc88',
                 fontSize: '0.7rem',
                 cursor: 'pointer',
                 borderRadius: '2px',
-                textAlign: 'left'
+                textAlign: 'left',
+                fontFamily: 'monospace'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#666'
+                e.currentTarget.style.background = '#443300'
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = '#555'
+                e.currentTarget.style.background = '#332200'
               }}
             >
               📊 État console
@@ -152,42 +174,45 @@ export default function DebugPanel() {
               onClick={handleResetGame}
               style={{
                 padding: '0.5rem',
-                background: '#555',
-                border: '1px solid #777',
-                color: '#fff',
+                background: '#ff6600',
+                border: '1px solid #ff8800',
+                color: '#000',
                 fontSize: '0.7rem',
                 cursor: 'pointer',
                 borderRadius: '2px',
-                textAlign: 'left'
+                textAlign: 'left',
+                fontWeight: 'bold',
+                fontFamily: 'monospace'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#666'
+                e.currentTarget.style.background = '#ff7700'
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = '#555'
+                e.currentTarget.style.background = '#ff6600'
               }}
             >
-              🔄 Reset jeu
+              💥 Reset complet
             </button>
 
             <button
               onClick={handleClearCache}
               style={{
                 padding: '0.5rem',
-                background: '#c44',
-                border: '1px solid #e66',
+                background: '#ff4400',
+                border: '1px solid #ff6600',
                 color: '#fff',
                 fontSize: '0.7rem',
                 cursor: 'pointer',
                 borderRadius: '2px',
                 textAlign: 'left',
-                fontWeight: 'bold'
+                fontWeight: 'bold',
+                fontFamily: 'monospace'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#d55'
+                e.currentTarget.style.background = '#ff5500'
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = '#c44'
+                e.currentTarget.style.background = '#ff4400'
               }}
             >
               🧹 Cache + Reload

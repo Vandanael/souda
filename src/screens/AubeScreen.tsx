@@ -9,32 +9,29 @@ import DailyObjectives from '../components/DailyObjectives'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { useButtonProtection } from '../hooks/useDebounce'
 import CompactHUD from '../components/CompactHUD'
-import HubDrawer from '../components/HubDrawer'
+import { Button } from '../components/design/Button'
+import { Panel } from '../components/design/Panel'
+import { IconButton } from '../components/design/IconButton'
+import { colors } from '../design/tokens'
+import { getTypographyStyleByName } from '../design/typography'
 
 export default function AubeScreen() {
-  const { playerStats, equipment, goToExploration, openInventory } = useGameStore()
+  const { playerStats, equipment, goToExploration, openInventory, setPhase } = useGameStore()
   const { playSound, playHaptic } = useAudio()
   const isMobile = useIsMobile()
   const [isNavigating, setIsNavigating] = useState(false)
   const [showWarning, setShowWarning] = useState(false)
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   
   const openMarche = () => {
     playSound('ui_open')
     playHaptic('button_press')
-    useGameStore.setState({ phase: 'marche' })
+    setPhase('marche')
   }
   
   const openMorten = () => {
     playSound('ui_open')
     playHaptic('button_press')
-    useGameStore.setState({ phase: 'morten' })
-  }
-  
-  const openSettings = () => {
-    playSound('ui_open')
-    playHaptic('button_press')
-    useGameStore.setState({ phase: 'settings' })
+    setPhase('morten')
   }
   
   const handleOpenInventory = () => {
@@ -46,19 +43,19 @@ export default function AubeScreen() {
   const openForge = () => {
     playSound('ui_open')
     playHaptic('button_press')
-    useGameStore.setState({ phase: 'forge' })
+    setPhase('forge')
   }
 
   const openTaverne = () => {
     playSound('ui_open')
     playHaptic('button_press')
-    useGameStore.setState({ phase: 'taverne' })
+    setPhase('taverne')
   }
-
-  const toggleDrawer = () => {
+  
+  const openReliques = () => {
     playSound('ui_open')
     playHaptic('button_press')
-    setIsDrawerOpen(!isDrawerOpen)
+    setPhase('reliques')
   }
   
   const handleGoToExplorationBase = () => {
@@ -104,9 +101,10 @@ export default function AubeScreen() {
       <div style={{
         display: 'flex',
         flexDirection: 'column',
-        gap: isMobile ? '1.5rem' : '2rem',
+        gap: isMobile ? '1rem' : '1.5rem',
         flex: 1,
-        padding: isMobile ? '0.75rem' : '1rem',
+        padding: isMobile ? '0.5rem 0.75rem' : '0.75rem 1rem',
+        paddingTop: isMobile ? '0.25rem' : '0.5rem',
         paddingBottom: isMobile ? '1rem' : '1rem',
         overflowY: 'auto',
         justifyContent: 'center'
@@ -114,35 +112,30 @@ export default function AubeScreen() {
         {/* Titre discret */}
         <div style={{
           textAlign: 'center',
+          ...getTypographyStyleByName('uiBold'),
           fontSize: isMobile ? '1rem' : '1.1rem',
-          fontWeight: 'bold',
-          color: '#888',
+          color: colors.neutral.ash,
           opacity: 0.7,
-          marginBottom: '0.5rem'
+          marginBottom: isMobile ? '0.25rem' : '0.5rem'
         }}>
           AUBE
         </div>
         
         {/* Texte narratif - priorité visuelle */}
         <div style={{
-          fontSize: isMobile ? '1.1rem' : '1.2rem',
-          lineHeight: '1.8',
-          color: '#ddd',
-          marginBottom: '1.5rem',
-          padding: '1rem',
-          background: 'rgba(26, 26, 26, 0.6)',
+          ...getTypographyStyleByName('narrative'),
+          fontSize: isMobile ? '1rem' : '1.1rem',
+          color: colors.neutral.ivory,
+          marginBottom: isMobile ? '0.75rem' : '1rem',
+          padding: isMobile ? '0.5rem 0.75rem' : '0.75rem 1rem',
+          background: colors.neutral.ink,
           borderRadius: '4px',
           fontStyle: 'italic'
         }}>
           "Bourg-Creux. Des murs. Un toit. Ça fera l'affaire. Pour l'instant."
         </div>
       
-      <div style={{
-        background: '#2a2a2a',
-        padding: isMobile ? '1rem' : '1.5rem',
-        borderRadius: '8px',
-        border: '2px solid #555'
-      }}>
+      <Panel level="L1" style={{ padding: isMobile ? '1rem' : '1.5rem' }}>
         {/* Personnage + Stats */}
         <div style={{
           display: 'flex',
@@ -153,12 +146,10 @@ export default function AubeScreen() {
         }}>
           <CharacterCanvas equipment={equipment} size={isMobile ? 80 : 96} />
           
-          <div style={{
+          <Panel level="L2" style={{
             padding: isMobile ? '0.75rem' : '1rem',
-            background: '#1a1a1a',
-            borderRadius: '4px',
             fontSize: isMobile ? '0.85rem' : '0.9rem',
-            color: '#ccc',
+            color: colors.neutral.ivory,
             lineHeight: '1.6',
             flex: 1,
             minWidth: isMobile ? '100%' : 'auto'
@@ -166,195 +157,119 @@ export default function AubeScreen() {
             <div style={{ marginBottom: '0.3rem' }}>{statsDesc.attack}</div>
             <div style={{ marginBottom: '0.3rem' }}>{statsDesc.defense}</div>
             <div>{statsDesc.speed}</div>
-          </div>
+          </Panel>
         </div>
         
         {/* FIX: Audit 3 - Progression et objectifs dans un accordéon */}
         <details style={{ marginBottom: '1rem' }}>
           <summary style={{ 
             cursor: 'pointer', 
-            color: '#aaa',
+            color: colors.neutral.ash,
             fontSize: '0.9rem',
             padding: '0.5rem',
             userSelect: 'none'
           }}>
-            📊 Progression et objectifs
+            Progression et objectifs
           </summary>
           <div style={{ marginTop: '0.75rem' }}>
             <EndingProgress compact={isMobile} />
             <DailyObjectives />
           </div>
         </details>
-      </div>
+      </Panel>
       
       <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '0.75rem' : '1rem' }}>
         {isMobile ? (
-          // Version mobile : menu hamburger + bouton principal
+          // Version mobile : icônes des boutons secondaires + bouton principal
           <>
-            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'stretch' }}>
-              <button
-                onClick={toggleDrawer}
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: '0.5rem',
+              marginBottom: '0.5rem'
+            }}>
+              <IconButton
+                icon="inventory"
+                onClick={handleOpenInventory}
+              />
+              <IconButton
+                icon="market"
+                onClick={openMarche}
+              />
+              <IconButton
+                icon="key"
+                onClick={openMorten}
+              />
+              <IconButton
+                icon="forge"
+                onClick={openForge}
+              />
+              <IconButton
+                icon="tavern"
+                onClick={openTaverne}
+              />
+              <IconButton
+                icon="relics"
+                onClick={openReliques}
                 style={{
-                  fontSize: '1rem',
-                  padding: '1rem',
-                  minHeight: '48px',
-                  flex: 1,
-                  background: '#2a2a2a',
-                  border: '2px solid #555',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.5rem'
+                  border: `2px solid ${colors.gold.tarnished}40`,
+                  color: colors.gold.tarnished
                 }}
-              >
-                <span style={{ fontSize: '1.2rem' }}>☰</span>
-                <span>MENU</span>
-              </button>
-              <button
-                onClick={openSettings}
-                style={{
-                  fontSize: '0.9rem',
-                  padding: '0.875rem 1rem',
-                  minHeight: '48px',
-                  minWidth: '48px',
-                  background: '#2a2a2a',
-                  border: '2px solid #444',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-                title="Paramètres"
-              >
-                ⚙️
-              </button>
+              />
             </div>
-            <button
+            <Button
+              variant="pillage"
+              size="lg"
+              fullWidth
               onClick={handleGoToExploration}
               disabled={isExplorationDisabled || isNavigating}
               style={{
-                fontSize: '1.1rem',
-                padding: '1.25rem',
-                minHeight: '56px',
-                width: '100%',
-                background: (isExplorationDisabled || isNavigating) ? '#444' : '#4a4',
-                border: '2px solid ' + ((isExplorationDisabled || isNavigating) ? '#666' : '#6a6'),
-                color: '#fff',
-                fontWeight: 'bold',
-                opacity: (isExplorationDisabled || isNavigating) ? 0.6 : 1,
-                cursor: (isExplorationDisabled || isNavigating) ? 'not-allowed' : 'pointer',
-                boxShadow: (isExplorationDisabled || isNavigating) ? 'none' : '0 2px 8px rgba(74, 164, 74, 0.3)'
+                width: isMobile ? '92%' : '100%',
+                margin: '0 auto',
+                minHeight: isMobile ? '56px' : '60px',
               }}
             >
-              {isNavigating ? 'CHARGEMENT...' : 'PARTIR EN MISSION →'}
-            </button>
+              {isNavigating ? 'CHARGEMENT...' : 'ALLER PILLER →'}
+            </Button>
           </>
         ) : (
           // Version desktop : tous les boutons visibles
           <>
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'nowrap' }}>
-              <button
-                onClick={handleOpenInventory}
-                style={{
-                  fontSize: '1rem',
-                  padding: '1rem',
-                  minHeight: '44px',
-                  flex: 1
-                }}
-              >
+              <Button onClick={handleOpenInventory} style={{ flex: 1 }}>
                 INVENTAIRE
-              </button>
-              <button
-                onClick={openMarche}
-                style={{
-                  fontSize: '1rem',
-                  padding: '1rem',
-                  minHeight: '44px',
-                  flex: 1
-                }}
-              >
+              </Button>
+              <Button onClick={openMarche} style={{ flex: 1 }}>
                 MARCHÉ
-              </button>
+              </Button>
             </div>
             
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'nowrap' }}>
-              <button
-                onClick={openMorten}
-                style={{
-                  fontSize: '1rem',
-                  padding: '1rem',
-                  minHeight: '44px',
-                  flex: 1
-                }}
-              >
+              <Button onClick={openMorten} style={{ flex: 1 }}>
                 USURIER
-              </button>
-              <button
-                onClick={openForge}
-                style={{
-                  fontSize: '1rem',
-                  padding: '1rem',
-                  minHeight: '44px',
-                  flex: 1
-                }}
-              >
+              </Button>
+              <Button onClick={openForge} style={{ flex: 1 }}>
                 FORGE
-              </button>
+              </Button>
             </div>
             
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'nowrap' }}>
-              <button
-                onClick={openTaverne}
-                style={{
-                  fontSize: '1rem',
-                  padding: '1rem',
-                  minHeight: '44px',
-                  flex: 1
-                }}
-              >
+              <Button onClick={openTaverne} style={{ flex: 1 }}>
                 TAVERNE
-              </button>
-              <button
-                onClick={openSettings}
-                style={{
-                  fontSize: '1.1rem',
-                  padding: '0.75rem 1.5rem',
-                  minHeight: '44px',
-                  background: '#2a2a2a',
-                  border: '2px solid #444'
-                }}
-              >
-                PARAMÈTRES
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="pillage"
                 onClick={handleGoToExploration}
                 disabled={isExplorationDisabled || isNavigating}
-                style={{
-                  fontSize: '1.1rem',
-                  padding: '1rem',
-                  minHeight: '44px',
-                  flex: 2,
-                  opacity: (isExplorationDisabled || isNavigating) ? 0.6 : 1,
-                  cursor: (isExplorationDisabled || isNavigating) ? 'not-allowed' : 'pointer'
-                }}
+                style={{ flex: 2 }}
               >
-                {isNavigating ? 'CHARGEMENT...' : 'PARTIR EN MISSION →'}
-              </button>
+                {isNavigating ? 'CHARGEMENT...' : 'ALLER PILLER →'}
+              </Button>
             </div>
           </>
         )}
       </div>
       </div>
-      
-      {/* Drawer pour les boutons secondaires sur mobile */}
-      <HubDrawer
-        isOpen={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
-        onInventory={handleOpenInventory}
-        onMarche={openMarche}
-        onMorten={openMorten}
-        onForge={openForge}
-        onTaverne={openTaverne}
-      />
       
       {/* Modal de warning si stats trop faibles */}
       <AnimatePresence>
@@ -384,26 +299,28 @@ export default function AubeScreen() {
               exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
               style={{
-                background: '#2a2a2a',
+                background: colors.neutral.slate,
                 padding: '2rem',
                 borderRadius: '8px',
-                border: '2px solid #c44',
+                border: `2px solid ${colors.blood.carmine}`,
                 maxWidth: '400px',
                 width: '100%'
               }}
             >
               <div style={{
+                ...getTypographyStyleByName('uiLarge'),
                 fontSize: '1.3rem',
                 fontWeight: 'bold',
                 marginBottom: '1rem',
-                color: '#c44',
+                color: colors.blood.carmine,
                 textAlign: 'center'
               }}>
                 ⚠️ ATTENTION
               </div>
               <div style={{
+                ...getTypographyStyleByName('ui'),
                 fontSize: '1rem',
-                color: '#ccc',
+                color: colors.neutral.ivory,
                 lineHeight: '1.6',
                 marginBottom: '1.5rem',
                 textAlign: 'center'
@@ -413,42 +330,25 @@ export default function AubeScreen() {
                 Explorer sans équipement adéquat est très dangereux. 
                 Tu risques de perdre au combat.
                 <br /><br />
-                <strong style={{ color: '#ca8' }}>Équipe-toi d'abord dans l'inventaire.</strong>
+                <strong style={{ color: colors.gold.tarnished }}>Équipe-toi d'abord dans l'inventaire.</strong>
               </div>
               <div style={{
                 display: 'flex',
                 gap: '1rem',
                 justifyContent: 'center'
               }}>
-                <button
+                <Button
+                  variant="danger"
                   onClick={handleConfirmExploration}
-                  style={{
-                    fontSize: '1rem',
-                    padding: '0.75rem 1.5rem',
-                    background: '#c44',
-                    border: 'none',
-                    borderRadius: '4px',
-                    color: '#fff',
-                    cursor: 'pointer',
-                    fontWeight: 'bold'
-                  }}
                 >
                   CONTINUER QUAND MÊME
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="secondary"
                   onClick={() => setShowWarning(false)}
-                  style={{
-                    fontSize: '1rem',
-                    padding: '0.75rem 1.5rem',
-                    background: '#555',
-                    border: 'none',
-                    borderRadius: '4px',
-                    color: '#fff',
-                    cursor: 'pointer'
-                  }}
                 >
                   ANNULER
-                </button>
+                </Button>
               </div>
             </motion.div>
           </motion.div>

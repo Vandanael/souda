@@ -119,3 +119,18 @@ export async function getStats(): Promise<GlobalStats> {
     totalCombatsLost
   }
 }
+
+/**
+ * Efface toutes les runs du Hall of Fame
+ */
+export async function clearHallOfFame(): Promise<void> {
+  const db = await openDB()
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([STORE_NAME], 'readwrite')
+    const store = transaction.objectStore(STORE_NAME)
+    const request = store.clear()
+    
+    request.onerror = () => reject(request.error)
+    request.onsuccess = () => resolve()
+  })
+}

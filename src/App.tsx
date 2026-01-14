@@ -2,10 +2,10 @@ import { lazy, Suspense } from 'react'
 import { useGameStore } from './store/gameStore'
 import { useMusicPhase } from './features/audio/useMusicPhase'
 import PageTransition from './components/PageTransition'
-import DebugPanel from './components/DebugPanel'
 import { useIsMobile } from './hooks/useIsMobile'
 import ContextualGuide from './components/ContextualGuide'
 import WebContainer from './components/layout/WebContainer'
+import DebugButton from './components/DebugButton'
 
 // Écrans principaux (chargés immédiatement)
 import StartScreen from './screens/StartScreen'
@@ -26,6 +26,8 @@ const OriginSelectScreen = lazy(() => import('./screens/OriginSelectScreen'))
 const HallOfFameScreen = lazy(() => import('./screens/HallOfFameScreen'))
 const TutorialScreen = lazy(() => import('./screens/TutorialScreen'))
 const SettingsScreen = lazy(() => import('./screens/SettingsScreen'))
+const RelicsScreen = lazy(() => import('./screens/RelicsScreen'))
+const FragmentCollectionScreen = lazy(() => import('./screens/FragmentCollectionScreen'))
 
 // Composant de chargement minimal
 const ScreenLoader = () => (
@@ -58,7 +60,6 @@ function App() {
         fontSize: isMobile ? '0.9rem' : '1rem',
         overflow: 'auto'
       }}>
-        <DebugPanel />
         <ContextualGuide phase={phase} />
         <PageTransition phase={phase}>
           <Suspense fallback={<ScreenLoader />}>
@@ -78,8 +79,13 @@ function App() {
             {phase === 'origin' && <OriginSelectScreen />}
             {phase === 'hallOfFame' && <HallOfFameScreen />}
             {phase === 'settings' && <SettingsScreen />}
+            {phase === 'reliques' && <RelicsScreen />}
+            {phase === 'fragmentCollection' && <FragmentCollectionScreen />}
           </Suspense>
         </PageTransition>
+        
+        {/* Bouton debug toujours visible */}
+        <DebugButton />
       </div>
     </WebContainer>
   )

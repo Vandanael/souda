@@ -50,6 +50,8 @@ export interface ExplorationResult {
   // Pour loot
   item?: any
   gold?: number
+  relicFragmentId?: string
+  relicFragmentAmount?: number
   
   // Pour choix narratif
   choiceId?: string

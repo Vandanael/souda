@@ -6,6 +6,7 @@
 type HapticPattern = 
   | 'loot_common' | 'loot_uncommon' | 'loot_rare' | 'loot_legendary'
   | 'combat_hit' | 'victory' | 'defeat' | 'button_press'
+  | 'button_metal' // Impulsion courte et ferme pour boutons métalliques (design system)
 
 /**
  * Détecte si on est sur Web
@@ -61,7 +62,8 @@ class HapticManager {
     combat_hit: [20],
     victory: [50, 50, 100],
     defeat: [200],
-    button_press: [5]
+    button_press: [5],
+    button_metal: [15] // Impulsion courte et ferme (plus forte que button_press)
   }
 
   /**

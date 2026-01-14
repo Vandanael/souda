@@ -2,6 +2,10 @@ import { useGameStore } from '../store/gameStore'
 import CombatScreen from '../features/combat/CombatScreen'
 import LootRevealScreen from './LootRevealScreen'
 import MapScreen from './MapScreen'
+import { Panel } from '../components/design/Panel'
+import { Button } from '../components/design/Button'
+import { colors } from '../design/tokens'
+import { getTypographyStyleByName } from '../design/typography'
 
 export default function ExplorationScreen() {
   const { 
@@ -39,6 +43,8 @@ export default function ExplorationScreen() {
         <LootRevealScreen
           item={lootedItem}
           gold={eventResult.gold}
+          relicFragmentId={eventResult.relicFragmentId}
+          relicFragmentAmount={eventResult.relicFragmentAmount}
           onContinue={finishEvent}
         />
       )
@@ -51,31 +57,41 @@ export default function ExplorationScreen() {
         flexDirection: 'column',
         gap: '2rem',
         flex: 1,
-        justifyContent: 'center'
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: '1rem'
       }}>
-        <div style={{
-          background: '#2a2a2a',
-          padding: '2rem',
-          borderRadius: '8px',
-          border: '2px solid #555',
-          textAlign: 'center'
-        }}>
-          <div style={{ fontSize: '1.3rem', marginBottom: '1rem' }}>
+        <Panel level="L1" style={{ padding: '2rem', textAlign: 'center', maxWidth: '400px' }}>
+          <div style={{ 
+            ...getTypographyStyleByName('uiLarge'),
+            fontSize: '1.3rem', 
+            marginBottom: '1rem' 
+          }}>
             💰
           </div>
-          <div style={{ fontSize: '1.1rem', marginBottom: '1rem', color: '#ccc' }}>
+          <div style={{ 
+            ...getTypographyStyleByName('ui'),
+            fontSize: '1.1rem', 
+            marginBottom: '1rem', 
+            color: colors.neutral.ivory 
+          }}>
             {eventResult.message}
           </div>
           {eventResult.gold && (
-            <div style={{ color: '#ddd', fontSize: '1.2rem', marginTop: '1rem' }}>
+            <div style={{ 
+              color: colors.gold.tarnished, 
+              fontSize: '1.2rem', 
+              marginTop: '1rem',
+              fontWeight: 600
+            }}>
               +{eventResult.gold}💰
             </div>
           )}
-        </div>
+        </Panel>
         
-        <button onClick={finishEvent}>
+        <Button onClick={finishEvent}>
           CONTINUER
-        </button>
+        </Button>
       </div>
     )
   }
@@ -90,12 +106,18 @@ export default function ExplorationScreen() {
         gap: '2rem',
         flex: 1,
         justifyContent: 'center',
-        alignItems: 'center'
+        alignItems: 'center',
+        padding: '1rem'
       }}>
-        <div>Chargement des lieux...</div>
-        <button onClick={() => useGameStore.getState().goToExploration()}>
+        <div style={{ 
+          ...getTypographyStyleByName('ui'),
+          color: colors.neutral.ivory 
+        }}>
+          Chargement des lieux...
+        </div>
+        <Button onClick={() => useGameStore.getState().goToExploration()}>
           GÉNÉRER LES LIEUX
-        </button>
+        </Button>
       </div>
     )
   }

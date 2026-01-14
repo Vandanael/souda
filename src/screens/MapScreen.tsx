@@ -1,10 +1,13 @@
 import { useGameStore } from '../store/gameStore'
 import { Location } from '../types/location'
-import { LOCATION_TYPES } from '../types/location'
 import { getCombatProbability, estimateCombatRatio, getEstimatedEnemyForRisk, calculateVictoryProbability, calculateCombatOutcomeProbabilities } from '../features/combat'
 import { useIsMobile } from '../hooks/useIsMobile'
-import { useState } from 'react'
 import CompactHUD from '../components/CompactHUD'
+import { Card } from '../components/design/Card'
+import { Panel } from '../components/design/Panel'
+import { Button } from '../components/design/Button'
+import { colors } from '../design/tokens'
+import { getTypographyStyleByName } from '../design/typography'
 
 interface MapScreenProps {
   locations: Location[]
@@ -13,12 +16,8 @@ interface MapScreenProps {
 }
 
 export default function MapScreen({ locations, onExplore, onEndDay }: MapScreenProps) {
-  const { actionsRemaining, day, rumors, playerStats } = useGameStore()
+  const { actionsRemaining, day, playerStats } = useGameStore()
   const isMobile = useIsMobile()
-  const [tooltipLocation, setTooltipLocation] = useState<string | null>(null)
-  
-  // Filtrer les rumeurs actives (du jour actuel ou des 2 jours précédents)
-  const activeRumors = rumors.filter(r => r.day >= day - 2)
   
   return (
     <div style={{
@@ -34,9 +33,10 @@ export default function MapScreen({ locations, onExplore, onEndDay }: MapScreenP
       <div style={{
         display: 'flex',
         flexDirection: 'column',
-        gap: '1.5rem',
+        gap: isMobile ? '1rem' : '1.5rem',
         flex: 1,
-        padding: '1rem'
+        padding: isMobile ? '0.75rem' : '1rem',
+        overflowY: 'auto'
       }}>
         {/* Titre discret */}
         <div style={{
@@ -44,9 +44,9 @@ export default function MapScreen({ locations, onExplore, onEndDay }: MapScreenP
           marginBottom: '0.5rem'
         }}>
           <div style={{
-            fontSize: isMobile ? '1.1rem' : '1.2rem',
-            fontWeight: 'bold',
-            color: '#aaa',
+            ...getTypographyStyleByName('uiBold'),
+            fontSize: isMobile ? '1rem' : '1.2rem',
+            color: colors.neutral.ash,
             opacity: 0.7
           }}>
             EXPLORATION
@@ -57,24 +57,12 @@ export default function MapScreen({ locations, onExplore, onEndDay }: MapScreenP
         <div style={{
           display: 'flex',
           flexDirection: 'column',
-          gap: '1rem'
+          gap: isMobile ? '0.75rem' : '1rem'
         }}>
         {locations.map((location, index) => {
-          const locationConfig = LOCATION_TYPES[location.type]
           const isTutorialLocation = index === 0 && day === 1
-          const canExplore = actionsRemaining > 0
-          
-          // Vérifier si une rumeur cible ce lieu
-          const locationRumors = activeRumors.filter(r => 
-            r.targetLocationId === location.id || 
-            (r.hintType === 'location' && !r.targetLocationId)
-          )
-          const hasRumor = locationRumors.length > 0
-          const rumorType = hasRumor ? locationRumors[0].hintType : null
-          const rumorIcon = rumorType === 'combat' ? '⚔️' :
-                           rumorType === 'loot' ? '💰' :
-                           rumorType === 'event' ? '⚠️' :
-                           rumorType === 'location' ? '📍' : null
+          const canExplore = actionsRemaining >= 1
+          const firstSeen = location.firstSeenDay ? `Vu J${location.firstSeenDay}` : undefined
           
           // Estimer le ratio de combat si probabilité > 0
           const combatProb = getCombatProbability(location.risk)
@@ -99,307 +87,258 @@ export default function MapScreen({ locations, onExplore, onEndDay }: MapScreenP
           }
           
           return (
-            <div
+            <Card
               key={location.id}
-              data-tutorial-location={isTutorialLocation ? 'true' : undefined}
+              variant="interactive"
+              surface="L1"
+              interactive
               style={{
-                background: '#2a2a2a',
-                border: '2px solid #555',
-                borderRadius: '8px',
-                padding: '1rem',
+                padding: isMobile ? '0.75rem' : '1rem',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '0.75rem'
+                gap: '0.5rem',
+                cursor: 'pointer'
+              }}
+              data-tutorial-location={isTutorialLocation ? 'true' : undefined}
+            >
+            <details
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.5rem',
+                width: '100%'
               }}
             >
-              {/* En-tête du lieu */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem'
+              <summary style={{
+                listStyle: 'none',
+                cursor: 'pointer',
+                userSelect: 'none'
               }}>
-                <div style={{
-                  fontSize: '2rem',
-                  position: 'relative'
-                }}>
-                  {locationConfig.icon}
-                  {hasRumor && rumorIcon && (
-                    <span style={{
-                      position: 'absolute',
-                      top: '-0.25rem',
-                      right: '-0.25rem',
-                      fontSize: '1rem',
-                      background: '#ca8',
-                      borderRadius: '50%',
-                      width: '1.25rem',
-                      height: '1.25rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      border: '2px solid #2a2a2a'
-                    }} title="Rumeur active">
-                      {rumorIcon}
-                    </span>
-                  )}
-                </div>
-                <div style={{ flex: 1 }}>
+                <style>{`
+                  details summary::-webkit-details-marker {
+                    display: none;
+                  }
+                  details summary::marker {
+                    display: none;
+                  }
+                `}</style>
+              {/* Carte compacte : Icône + Nom + Stats + Bouton */}
+              <div 
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: isMobile ? '0.5rem' : '0.75rem'
+                }}
+                onClick={(e) => {
+                  // Empêcher la propagation si on clique sur le bouton EXPLORER
+                  if ((e.target as HTMLElement).closest('button[data-tutorial-explore-button]')) {
+                    e.stopPropagation()
+                  }
+                }}
+              >
+                {/* Nom et stats - alignés à gauche */}
+                <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
                   <div style={{
-                    fontSize: '1.2rem',
+                    fontSize: isMobile ? '1rem' : '1.1rem',
                     fontWeight: 'bold',
                     marginBottom: '0.25rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem'
+                    textAlign: 'left'
                   }}>
-                    {location.name}
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>
+                      {location.name}
+                    </span>
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    gap: '0.75rem',
+                    fontSize: isMobile ? '0.7rem' : '0.75rem',
+                    color: colors.neutral.ash,
+                    flexWrap: 'wrap',
+                    alignItems: 'center',
+                    textAlign: 'left'
+                  }}>
                     {location.explored && (
                       <span style={{
-                        fontSize: '0.75rem',
-                        color: '#888',
-                        fontStyle: 'italic'
+                        fontSize: '0.7rem',
+                        color: colors.neutral.ash,
+                        fontStyle: 'italic',
+                        flexShrink: 0
                       }}>
                         (Exploré {(location.explorationCount || 0)}x)
                       </span>
                     )}
-                  </div>
-                  <div style={{
-                    fontSize: '0.85rem',
-                    color: '#aaa',
-                    fontStyle: 'italic'
-                  }}>
-                    {location.description}
+                    {firstSeen && (
+                      <span style={{
+                        fontSize: '0.7rem',
+                        color: colors.neutral.soot,
+                        flexShrink: 0
+                      }}>
+                        {firstSeen}
+                      </span>
+                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                      <span style={{ color: colors.blood.carmine, fontWeight: 600 }}>
+                        Risque {location.risk}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                      <span style={{ color: colors.gold.tarnished, fontWeight: 600 }}>
+                        Richesse {location.richness}
+                      </span>
+                    </div>
                   </div>
                 </div>
+                
+                {/* Bouton EXPLORER - aligné à droite */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', alignItems: 'flex-end' }}>
+                  <Button
+                    data-tutorial-explore-button={isTutorialLocation ? 'true' : undefined}
+                    onClick={(e) => {
+                      e.stopPropagation() // Empêcher l'ouverture de l'accordéon
+                      onExplore(location)
+                    }}
+                    disabled={!canExplore}
+                    size="sm"
+                    style={{
+                      minWidth: isMobile ? '80px' : '100px',
+                      flexShrink: 0
+                    }}
+                  >
+                    EXPLORER
+                  </Button>
+                </div>
               </div>
+              </summary>
               
-              {/* Stats du lieu */}
-              <div style={{
+              {/* Contenu de l'accordéon */}
+              <Panel level="L2" style={{
+                marginTop: '0.5rem',
+                padding: '0.75rem',
                 display: 'flex',
-                gap: '1rem',
-                fontSize: '0.9rem',
-                color: '#ccc',
-                flexWrap: 'wrap',
-                alignItems: 'center'
+                flexDirection: 'column',
+                gap: '0.75rem',
+                fontSize: isMobile ? '0.8rem' : '0.85rem'
               }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.25rem'
-                }}>
-                  <span>Risque:</span>
-                  <span style={{ color: '#c44' }}>
-                    {'⭐'.repeat(location.risk)}
-                  </span>
-                </div>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.25rem'
-                }}>
-                  <span>Richesse:</span>
-                  <span style={{ color: '#ca8' }}>
-                    {'💰'.repeat(location.richness)}
-                  </span>
-                </div>
-                {/* Warning combat amélioré */}
-                {combatWarning && combatEstimate && estimatedEnemy && outcomeProbabilities && (
-                  <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '0.5rem',
-                    marginTop: '0.25rem',
-                    padding: '0.75rem',
-                    background: combatWarning === 'danger' ? '#2a1a1a' : 
-                               combatWarning === 'risky' ? '#2a2a1a' : '#1a2a1a',
-                    borderRadius: '4px',
-                    border: `1px solid ${combatWarning === 'danger' ? '#c44' : 
-                                            combatWarning === 'risky' ? '#ca8' : '#4a4'}`,
-                    position: 'relative'
-                  }}>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      flexWrap: 'wrap'
-                    }}>
-                      {combatWarning === 'danger' && (
-                        <span style={{
-                          background: '#c44',
-                          color: '#fff',
-                          padding: '0.2rem 0.5rem',
-                          borderRadius: '4px',
-                          fontSize: '0.75rem',
-                          fontWeight: 'bold'
-                        }}>
-                          ⚠️ DANGER
-                        </span>
-                      )}
-                      {combatWarning === 'risky' && (
-                        <span style={{
-                          background: '#ca8',
-                          color: '#000',
-                          padding: '0.2rem 0.5rem',
-                          borderRadius: '4px',
-                          fontSize: '0.75rem',
-                          fontWeight: 'bold'
-                        }}>
-                          ⚠️ RISQUÉ
-                        </span>
-                      )}
-                      {combatWarning === 'safe' && (
-                        <span style={{
-                          background: '#4a4',
-                          color: '#fff',
-                          padding: '0.2rem 0.5rem',
-                          borderRadius: '4px',
-                          fontSize: '0.75rem',
-                          fontWeight: 'bold'
-                        }}>
-                          ✓ SÛR
-                        </span>
-                      )}
-                      <span style={{
-                        fontSize: '0.8rem',
-                        color: '#aaa'
-                      }}>
-                        Ratio: {combatEstimate.ratio.toFixed(2)}
-                      </span>
-                      <span style={{
-                        fontSize: '0.8rem',
-                        color: '#aaa'
-                      }}>
-                        Victoire: {calculateVictoryProbability(combatEstimate.ratio)}%
-                      </span>
-                      <button
-                        onClick={() => setTooltipLocation(tooltipLocation === location.id ? null : location.id)}
-                        style={{
-                          background: 'transparent',
-                          border: '1px solid #555',
-                          borderRadius: '4px',
-                          padding: '0.2rem 0.5rem',
-                          fontSize: '0.75rem',
-                          color: '#aaa',
-                          cursor: 'pointer'
-                        }}
-                        title="Afficher détails"
-                      >
-                        {tooltipLocation === location.id ? '▼' : '▶'} Détails
-                      </button>
-                    </div>
-                    
-                    {/* Stats ennemi estimées */}
-                    <div style={{
-                      fontSize: '0.75rem',
-                      color: '#888',
-                      display: 'flex',
-                      gap: '0.75rem',
-                      flexWrap: 'wrap'
-                    }}>
-                      <span>Ennemi estimé: ATK {estimatedEnemy.atk} | DEF {estimatedEnemy.def} | VIT {estimatedEnemy.vit}</span>
-                    </div>
-                    
-                    {/* Probabilités détaillées (affichées si tooltip ouvert) */}
-                    {tooltipLocation === location.id && (
-                      <div style={{
-                        marginTop: '0.5rem',
-                        padding: '0.5rem',
-                        background: '#1a1a1a',
-                        borderRadius: '4px',
-                        fontSize: '0.75rem',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '0.25rem'
-                      }}>
-                        <div style={{ fontWeight: 'bold', marginBottom: '0.25rem', color: '#ddd' }}>
-                          Probabilités de résultats :
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ color: '#4a8' }}>Victoire écrasante :</span>
-                            <span style={{ color: '#4a8' }}>{outcomeProbabilities.crushing}%</span>
-                          </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ color: '#4a4' }}>Victoire :</span>
-                            <span style={{ color: '#4a4' }}>{outcomeProbabilities.victory}%</span>
-                          </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ color: '#ca8' }}>Victoire coûteuse :</span>
-                            <span style={{ color: '#ca8' }}>{outcomeProbabilities.costly}%</span>
-                          </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ color: '#c84' }}>Fuite :</span>
-                            <span style={{ color: '#c84' }}>{outcomeProbabilities.flee}%</span>
-                          </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ color: '#c44' }}>Défaite :</span>
-                            <span style={{ color: '#c44' }}>{outcomeProbabilities.defeat}%</span>
-                          </div>
-                        </div>
+                        {/* Description */}
                         <div style={{
-                          marginTop: '0.5rem',
-                          paddingTop: '0.5rem',
-                          borderTop: '1px solid #333',
-                          fontSize: '0.7rem',
-                          color: '#666',
-                          fontStyle: 'italic'
+                          ...getTypographyStyleByName('narrative'),
+                          color: colors.neutral.ash,
+                          fontSize: isMobile ? '0.8rem' : '0.85rem',
+                          lineHeight: '1.5'
                         }}>
-                          {combatWarning === 'danger' && '⚠️ Tu risques de perdre ce combat. Évite ou améliore ton équipement.'}
-                          {combatWarning === 'risky' && '⚠️ Combat difficile. Tu risques de fuir ou de subir des dégâts.'}
-                          {combatWarning === 'safe' && '✓ Tu devrais gagner ce combat sans trop de difficulté.'}
+                          {location.description}
                         </div>
-                      </div>
-                    )}
-                    
-                    {/* Message court si tooltip fermé */}
-                    {tooltipLocation !== location.id && (
-                      <div style={{
-                        fontSize: '0.75rem',
-                        color: '#888',
-                        fontStyle: 'italic'
-                      }}>
-                        {combatWarning === 'danger' && 'Tu risques de perdre ce combat. Évite ou améliore ton équipement.'}
-                        {combatWarning === 'risky' && 'Combat difficile. Tu risques de fuir ou de subir des dégâts.'}
-                        {combatWarning === 'safe' && 'Tu devrais gagner ce combat sans trop de difficulté.'}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-              
-              {/* Bouton Explorer */}
-              <button
-                data-tutorial-explore-button={isTutorialLocation ? 'true' : undefined}
-                onClick={() => onExplore(location)}
-                disabled={!canExplore}
-                style={{
-                  width: '100%',
-                  padding: isMobile ? '0.875rem' : '0.75rem',
-                  fontSize: isMobile ? '0.95rem' : '1rem',
-                  minHeight: '44px',
-                  opacity: canExplore ? 1 : 0.5,
-                  cursor: canExplore ? 'pointer' : 'not-allowed'
-                }}
-              >
-                EXPLORER
-              </button>
-            </div>
+                        
+                        {/* Détails de combat si disponibles */}
+                        {combatWarning && combatEstimate && estimatedEnemy && outcomeProbabilities && (
+                          <Panel level="L3" style={{
+                            padding: '0.75rem',
+                            background: combatWarning === 'danger' ? colors.blood.rust : 
+                                       combatWarning === 'risky' ? colors.neutral.slate : colors.neutral.ink,
+                            border: `1px solid ${combatWarning === 'danger' ? colors.blood.carmine : 
+                                                    combatWarning === 'risky' ? colors.gold.tarnished : colors.gold.bone}`
+                          }}>
+                            <div style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '0.5rem'
+                            }}>
+                              <div style={{
+                                display: 'flex',
+                                gap: '0.75rem',
+                                flexWrap: 'wrap',
+                                fontSize: '0.75rem',
+                                color: colors.neutral.ash
+                              }}>
+                                <span>Ratio: {combatEstimate.ratio.toFixed(2)}</span>
+                                <span>Victoire: {calculateVictoryProbability(combatEstimate.ratio)}%</span>
+                                <span>Ennemi: ATK {estimatedEnemy.atk} | DEF {estimatedEnemy.def} | VIT {estimatedEnemy.vit}</span>
+                              </div>
+                              
+                              {/* Probabilités détaillées */}
+                              <Panel level="L2" style={{
+                                marginTop: '0.5rem',
+                                padding: '0.5rem',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '0.25rem'
+                              }}>
+                                <div style={{ 
+                                  fontWeight: 'bold', 
+                                  marginBottom: '0.25rem', 
+                                  color: colors.neutral.ivory, 
+                                  fontSize: '0.8rem' 
+                                }}>
+                                  Probabilités :
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', fontSize: '0.75rem' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <span style={{ color: colors.gold.bone }}>Victoire écrasante :</span>
+                                    <span style={{ color: colors.gold.bone }}>{outcomeProbabilities.crushing}%</span>
+                                  </div>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <span style={{ color: colors.gold.tarnished }}>Victoire :</span>
+                                    <span style={{ color: colors.gold.tarnished }}>{outcomeProbabilities.victory}%</span>
+                                  </div>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <span style={{ color: colors.gold.burnt }}>Victoire coûteuse :</span>
+                                    <span style={{ color: colors.gold.burnt }}>{outcomeProbabilities.costly}%</span>
+                                  </div>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <span style={{ color: colors.gold.tarnished }}>Fuite :</span>
+                                    <span style={{ color: colors.gold.tarnished }}>{outcomeProbabilities.flee}%</span>
+                                  </div>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <span style={{ color: colors.blood.carmine }}>Défaite :</span>
+                                    <span style={{ color: colors.blood.carmine }}>{outcomeProbabilities.defeat}%</span>
+                                  </div>
+                                </div>
+                              </Panel>
+                              
+                              <div style={{
+                                fontSize: '0.75rem',
+                                color: colors.neutral.ash,
+                                fontStyle: 'italic',
+                                marginTop: '0.25rem'
+                              }}>
+                                {combatWarning === 'danger' && '⚠️ Tu risques de perdre ce combat. Évite ou améliore ton équipement.'}
+                                {combatWarning === 'risky' && '⚠️ Combat difficile. Tu risques de fuir ou de subir des dégâts.'}
+                                {combatWarning === 'safe' && '✓ Tu devrais gagner ce combat sans trop de difficulté.'}
+                              </div>
+                            </div>
+                          </Panel>
+                        )}
+                      </Panel>
+            </details>
+            </Card>
           )
         })}
         
-        {/* Bouton Terminer la journée */}
-        <button
+        {/* Bouton Terminer la journée - Dans la zone scrollable */}
+        <Button
+          variant="secondary"
+          size={isMobile ? 'lg' : 'md'}
           onClick={onEndDay}
+          fullWidth
           style={{
-            marginTop: '1rem',
-            padding: isMobile ? '0.875rem' : '1rem',
-            fontSize: isMobile ? '1rem' : '1.1rem',
-            minHeight: '44px',
-            background: '#3a2a2a',
-            border: '2px solid #666'
+            marginTop: isMobile ? '0.5rem' : '1rem',
+            minHeight: isMobile ? '56px' : '44px'
           }}
         >
           TERMINER LA JOURNÉE
-        </button>
+        </Button>
+        
+        {/* Indication discrète pour les détails */}
+        <div style={{
+          textAlign: 'center',
+          fontSize: '0.7rem',
+          color: colors.neutral.soot,
+          marginTop: '0.5rem',
+          paddingBottom: '0.5rem',
+          fontStyle: 'italic'
+        }}>
+          {isMobile ? 'Tap' : 'Click'} for info
+        </div>
       </div>
       </div>
     </div>

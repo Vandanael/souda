@@ -1,15 +1,19 @@
 import { Item } from '../../types/item'
 import { BALANCE_CONFIG } from '../../config/balance'
+import { RelicInstance } from '../../types/relic'
+import { getRelicRepairMultiplier } from '../relics/relics.bonus'
 
 /**
  * Calcule le coût de réparation d'un item
  * Coût = (max - current) × repairCostPerPoint × rareté
  * @param item Item à réparer
  * @param narrativeCounters Compteurs narratifs (optionnel, pour bonus pragmatisme)
+ * @param relics Reliques du joueur (optionnel, pour bonus réparations)
  */
 export function calculateRepairCost(
   item: Item,
-  narrativeCounters?: Record<string, number>
+  narrativeCounters?: Record<string, number>,
+  relics?: RelicInstance[]
 ): number {
   const missingDurability = item.maxDurability - item.durability
   const rarityMultiplier = item.rarity === 'common' ? 1.0 : 
@@ -22,7 +26,10 @@ export function calculateRepairCost(
     pragmatismeBonus = 0.85
   }
   
-  const cost = missingDurability * BALANCE_CONFIG.economy.repairCostPerPoint * rarityMultiplier * pragmatismeBonus
+  // Bonus reliques : multiplicateur de réparation (ex: -10% = 0.9)
+  const relicRepairMultiplier = relics ? getRelicRepairMultiplier(relics) : 1.0
+  
+  const cost = missingDurability * BALANCE_CONFIG.economy.repairCostPerPoint * rarityMultiplier * pragmatismeBonus * relicRepairMultiplier
   return Math.ceil(cost)
 }
 

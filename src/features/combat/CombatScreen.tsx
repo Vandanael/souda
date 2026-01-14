@@ -6,12 +6,13 @@ import { PlayerStats } from '../../utils/stats'
 import EnemyDisplay from './EnemyDisplay'
 import CombatAnimation from './CombatAnimation'
 import CombatResultDisplay from './CombatResult'
+import CombatBreakdownDisplay from './CombatBreakdownDisplay'
 import { audioManager } from '../audio/audioManager'
 import { ScreenShakeWrapper } from '../../hooks/useScreenShake'
 import { autoSave } from '../game/saveSystem'
 import { useGameStore } from '../../store/gameStore'
 
-type CombatPhase = 'anticipation' | 'resolution' | 'result' | 'complete'
+type CombatPhase = 'anticipation' | 'tension' | 'resolution' | 'result' | 'complete'
 
 interface CombatScreenProps {
   enemy: Enemy
@@ -24,13 +25,14 @@ export default function CombatScreen({
   playerStats,
   onCombatEnd 
 }: CombatScreenProps) {
+  const relics = useGameStore((state) => state.relics)
   const [phase, setPhase] = useState<CombatPhase>('anticipation')
   const [combatResult, setCombatResult] = useState<CombatResult | null>(null)
   const [shouldShake, setShouldShake] = useState(false)
   
   // Résoudre le combat immédiatement (logique pure)
   useEffect(() => {
-    const result = resolveCombat(playerStats, enemy)
+    const result = resolveCombat(playerStats, enemy, undefined, undefined, relics)
     setCombatResult(result)
     
     // Déclencher shake si le joueur prend des dégâts
@@ -49,7 +51,7 @@ export default function CombatScreen({
     }).catch(() => {})
   }, [enemy, playerStats])
   
-  // Phase 1 : Anticipation (0.5s)
+  // Phase 1 : Anticipation (0.5s) -> Tension
   useEffect(() => {
     if (phase === 'anticipation') {
       // Crossfade vers musique de combat
@@ -67,11 +69,22 @@ export default function CombatScreen({
       }).catch(() => {})
       
       const timer = setTimeout(() => {
-        setPhase('resolution')
+        setPhase('tension')
       }, 500)
       return () => clearTimeout(timer)
     }
   }, [phase, enemy, combatResult])
+
+  // Phase 1.5 : Tension (0.6s) avant résolution
+  useEffect(() => {
+    if (phase === 'tension') {
+      audioManager.playSound('combat_start')
+      const timer = setTimeout(() => {
+        setPhase('resolution')
+      }, 600)
+      return () => clearTimeout(timer)
+    }
+  }, [phase])
   
   // Sauvegarder au début de la phase resolution
   useEffect(() => {
@@ -214,7 +227,42 @@ export default function CombatScreen({
         )}
       </AnimatePresence>
       
-      {/* Phase 2 : Résolution */}
+      {/* Phase 2 : Tension */}
+      <AnimatePresence>
+        {phase === 'tension' && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            style={{
+              width: '100%',
+              maxWidth: '500px',
+              textAlign: 'center',
+              padding: '1rem',
+              zIndex: 2
+            }}
+          >
+            <motion.div
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: [0.1, 1, 0.8, 1] }}
+              transition={{ duration: 0.6, ease: 'easeInOut' }}
+              style={{
+                height: '10px',
+                background: 'linear-gradient(90deg, #c44, #ca8)',
+                borderRadius: '6px',
+                transformOrigin: 'left',
+                boxShadow: '0 0 12px rgba(255,0,0,0.35)'
+              }}
+            />
+            <div style={{ marginTop: '0.5rem', color: '#ccc', fontSize: '0.95rem', letterSpacing: '0.05em' }}>
+              Suspense...
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Phase 3 : Résolution */}
       <AnimatePresence>
         {phase === 'resolution' && (
           <motion.div
@@ -233,7 +281,7 @@ export default function CombatScreen({
         )}
       </AnimatePresence>
       
-      {/* Phase 3 : Résultat */}
+      {/* Phase 4 : Résultat */}
       <AnimatePresence>
         {phase === 'result' && combatResult && (
           <motion.div
@@ -250,11 +298,17 @@ export default function CombatScreen({
               result={combatResult} 
               onComplete={handleResultComplete}
             />
+            {combatResult.breakdown && (
+              <CombatBreakdownDisplay 
+                breakdown={combatResult.breakdown}
+                outcome={combatResult.outcome}
+              />
+            )}
           </motion.div>
         )}
       </AnimatePresence>
       
-      {/* Phase 4 : Complete - transition automatique vers écran suivant */}
+      {/* Phase 5 : Complete - transition automatique vers écran suivant */}
       {phase === 'complete' && (
         <div style={{ opacity: 0 }}>
           {/* Écran vide, la transition est gérée par onCombatEnd */}

@@ -1,6 +1,8 @@
 import { Enemy } from '../../types/enemy'
 import { Item } from '../../types/item'
 import { PlayerStats } from '../../utils/stats'
+import { RelicInstance } from '../../types/relic'
+import { getRelicDamageMultiplier, getRelicFleeBonus } from '../relics/relics.bonus'
 
 export type CombatOutcome = 
   | 'crushing'
@@ -14,6 +16,27 @@ export interface DurabilityLoss {
   amount: number // Pourcentage de perte (10-20)
 }
 
+export interface PowerBreakdown {
+  atkContribution: number
+  defContribution: number
+  vitContribution: number
+  base: number
+  randomRoll: number
+  total: number
+}
+
+export interface CombatBreakdown {
+  player: PowerBreakdown
+  enemy: PowerBreakdown
+  ratio: number
+  thresholds: {
+    crushing: number
+    victory: number
+    costly: number
+    flee: number
+  }
+}
+
 export interface CombatResult {
   outcome: CombatOutcome
   playerPower: number
@@ -24,6 +47,7 @@ export interface CombatResult {
   gold?: number
   message: string
   nearMissMessage?: string
+  breakdown: CombatBreakdown
 }
 
 /**
@@ -55,32 +79,46 @@ export class SeededRandom {
 export function calculatePower(
   stats: PlayerStats,
   isPlayer: boolean,
-  random?: SeededRandom
+  random?: SeededRandom,
+  relics?: RelicInstance[]
 ): number {
-  const base = (stats.atk * 0.5) + (stats.def * 0.3) + (stats.vit * 0.2)
+  return calculatePowerDetailed(stats, isPlayer, random, relics).total
+}
+
+export function calculatePowerDetailed(
+  stats: PlayerStats,
+  isPlayer: boolean,
+  random?: SeededRandom,
+  relics?: RelicInstance[]
+): PowerBreakdown {
+  // Appliquer le bonus de dégâts des reliques si c'est le joueur
+  const damageMultiplier = isPlayer && relics ? getRelicDamageMultiplier(relics) : 1.0
   
-  // Réduire la variance : joueur random(3.5-16.5) au lieu de (1-20), ennemi random(3-12) au lieu de (1-15)
-  // Cela garantit un minimum et réduit les extrêmes
-  let randomValue: number
+  const atkContribution = stats.atk * 0.5 * damageMultiplier
+  const defContribution = stats.def * 0.3
+  const vitContribution = stats.vit * 0.2
+  const base = atkContribution + defContribution + vitContribution
+  
+  // Variance réduite : joueur random(7-11), ennemi random(5-9)
+  // Cela réduit la variance de 10 à 4 pour joueur, et de 7 à 4 pour ennemi
+  // Résultat plus prévisible et équitable
+  let randomRoll: number
   if (random) {
-    if (isPlayer) {
-      // Joueur : 3.5 à 16.5 (variance réduite)
-      randomValue = 3.5 + random.next() * 13
-    } else {
-      // Ennemi : 3 à 12 (variance réduite)
-      randomValue = 3 + random.next() * 9
-    }
+    randomRoll = isPlayer ? 7 + random.next() * 4 : 5 + random.next() * 4
   } else {
-    if (isPlayer) {
-      // Joueur : 3.5 à 16.5 (variance réduite)
-      randomValue = 3.5 + Math.random() * 13
-    } else {
-      // Ennemi : 3 à 12 (variance réduite)
-      randomValue = 3 + Math.random() * 9
-    }
+    randomRoll = isPlayer ? 7 + Math.random() * 4 : 5 + Math.random() * 4
   }
   
-  return base + randomValue
+  const total = base + randomRoll
+  
+  return {
+    atkContribution,
+    defContribution,
+    vitContribution,
+    base,
+    randomRoll,
+    total
+  }
 }
 
 /**
@@ -136,21 +174,25 @@ function calculateDurabilityLoss(
  * @param enemy Ennemi à affronter
  * @param equipment Équipement du joueur (pour calculer durabilité)
  * @param random Générateur aléatoire (optionnel, pour tests)
+ * @param relics Reliques du joueur (pour appliquer les bonus)
  */
 export function resolveCombat(
   playerStats: PlayerStats,
   enemy: Enemy,
   equipment?: Partial<Record<string, Item>>,
-  random?: SeededRandom
+  random?: SeededRandom,
+  relics?: RelicInstance[]
 ): CombatResult {
-  const playerPower = calculatePower(playerStats, true, random)
-  const enemyPower = calculatePower(
+  const playerPowerInfo = calculatePowerDetailed(playerStats, true, random, relics)
+  const enemyPowerInfo = calculatePowerDetailed(
     { atk: enemy.atk, def: enemy.def, vit: enemy.vit },
     false,
     random
   )
   
-  const ratio = playerPower / enemyPower
+  const playerPower = playerPowerInfo.total
+  const enemyPower = enemyPowerInfo.total
+  let ratio = playerPower / enemyPower
   
   let outcome: CombatOutcome
   let message: string
@@ -191,9 +233,20 @@ export function resolveCombat(
       }
     }
   } else if (ratio > 0.4) {
-    outcome = 'flee'
-    message = `Tu as fui ${enemy.name}. Tu as perdu du matériel.`
-    lootEarned = false
+    // Appliquer le bonus de fuite des reliques
+    const fleeBonus = relics ? getRelicFleeBonus(relics) : 0
+    // Ajuster le ratio pour favoriser la fuite (augmenter le ratio effectif)
+    const adjustedRatio = ratio * (1 + fleeBonus)
+    
+    if (adjustedRatio > 0.4) {
+      outcome = 'flee'
+      message = `Tu as fui ${enemy.name}. Tu as perdu du matériel.`
+      lootEarned = false
+    } else {
+      outcome = 'defeat'
+      message = `Tu as été vaincu par ${enemy.name}.`
+      lootEarned = false
+    }
   } else {
     outcome = 'defeat'
     message = `Tu as été vaincu par ${enemy.name}.`
@@ -214,7 +267,18 @@ export function resolveCombat(
     lootEarned,
     gold,
     message,
-    nearMissMessage
+    nearMissMessage,
+    breakdown: {
+      player: playerPowerInfo,
+      enemy: enemyPowerInfo,
+      ratio,
+      thresholds: {
+        crushing: 1.4,
+        victory: 1.0,
+        costly: 0.7,
+        flee: 0.4
+      }
+    }
   }
 }
 

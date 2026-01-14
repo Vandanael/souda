@@ -5,14 +5,12 @@ import { determineEnding } from '../features/endings/endings.logic'
 import { useMetaProgressionStore } from '../store/metaProgression'
 import { loadUnlockState, checkUnlocks, saveUnlockState } from '../features/meta/unlocks'
 import EndingScreen from './EndingScreen'
-import MetaProgressionDisplay from '../components/MetaProgressionDisplay'
 
 export default function VictoryScreen() {
   const gameState = useGameStore()
   const { calculateRunXP } = useMetaProgressionStore()
   const [ending, setEnding] = useState<ReturnType<typeof determineEnding> | null>(null)
   const [xpGained, setXpGained] = useState<number | null>(null)
-  const [showProgression, setShowProgression] = useState(false)
   
   useEffect(() => {
     // Déterminer la fin
@@ -30,7 +28,9 @@ export default function VictoryScreen() {
         combatsFled,
         combatsLost,
         narrativeCounters,
-        triggeredEvents
+        triggeredEvents,
+        relicFragments,
+        relics
       } = gameState
       
       const legendaryItems = inventory.filter(item => item.rarity === 'legendary').map(item => item.name)
@@ -41,7 +41,6 @@ export default function VictoryScreen() {
       // Calculer l'XP gagnée
       const xp = calculateRunXP(day, gold, narrativeChoicesCount)
       setXpGained(xp)
-      setShowProgression(true)
       
       const runData = {
         id: crypto.randomUUID(),
@@ -63,7 +62,9 @@ export default function VictoryScreen() {
           cynisme: narrativeCounters.cynisme || 0,
           humanite: narrativeCounters.humanite || 0,
           pragmatisme: narrativeCounters.pragmatisme || 0
-        }
+        },
+        relicFragments: relicFragments,
+        relicsCount: relics.length
       }
       
       await saveRun(runData)
@@ -81,16 +82,6 @@ export default function VictoryScreen() {
   }
   
   return (
-    <>
-      <EndingScreen ending={ending} />
-      {showProgression && xpGained !== null && (
-        <MetaProgressionDisplay 
-          xpGained={xpGained}
-          onAnimationComplete={() => {
-            // L'animation est terminée, on peut continuer
-          }}
-        />
-      )}
-    </>
+    <EndingScreen ending={ending} xpGained={xpGained ?? undefined} />
   )
 }
